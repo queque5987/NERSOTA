@@ -1,3 +1,4 @@
 KoBERT-NER/
 .env/
 방송대본요약/
+__pycache__/
