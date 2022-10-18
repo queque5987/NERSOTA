@@ -1,0 +1,288 @@
+네, 뭐 열심히 해야죠. 
+
+네[ORG],[ORG] 뭐[ORG] 열심히[ORG] 해야[ORG]죠[ORG].[ORG] [ORG]
+
+안녕하세요? 
+
+안녕하세요[ORG]?[ORG] [ORG]
+
+네. 
+
+네[ORG].[ORG] [PER]
+
+예. 
+
+예[ORG].[ORG] [ORG]
+
+안녕하십니까? 
+
+안[ORG]녕[ORG]하[ORG]십[ORG]니까[ORG]?[ORG] [ORG]
+
+아, 처음에는 ‘NO’ 하셨어요? 
+
+아[ORG],[ORG] 처음[ORG]에는[ORG] ‘[ORG]NO[ORG]’[ORG] 하[ORG]셨[ORG]어요[ORG]?[ORG] [ORG]
+
+네, 맞습니다. 
+
+네[ORG],[ORG] 맞[ORG]습니다[ORG].[ORG] [ORG]
+
+안녕하세요? 
+
+안녕하세요[ORG]?[ORG] [ORG]
+
+예. 
+
+예[ORG].[ORG] [ORG]
+
+안녕하세요? 
+
+안녕하세요[ORG]?[ORG] [ORG]
+
+안녕하세요? 
+
+안녕하세요[ORG]?[ORG] [ORG]
+
+네, 맞습니다. 
+
+네[ORG],[ORG] 맞[ORG]습니다[ORG].[ORG] [ORG]
+
+뭘? 
+
+뭘[ORG][ORG]?[ORG] [ORG]
+
+안녕하세요? 
+
+안녕하세요[ORG]?[ORG] [ORG]
+
+바쁘시죠? 
+
+바[ORG]쁘[ORG]시[ORG]죠[ORG]?[ORG] [ORG]
+
+안녕하세요? 
+
+안녕하세요[ORG]?[ORG] [ORG]
+
+그러세요? 
+
+그러[ORG]세요[ORG]?[ORG] [ORG]
+
+아, 지금 공백이에요, 그게? 
+
+아[ORG],[ORG] 지금[ORG] 공[ORG]백[ORG]이에요[ORG],[ORG] 그[ORG]게[ORG]?[ORG] [ORG]
+
+안녕하세요? 
+
+안녕하세요[ORG]?[ORG] [ORG]
+
+이거는 안 바뀝니까, 1번은? 
+
+이[ORG]거[ORG]는[ORG] 안[ORG] 바[ORG]뀝[ORG]니까[ORG],[ORG] 1[ORG]번[ORG]은[ORG]?[ORG] [ORG]
+
+안녕하세요? 
+
+안녕하세요[ORG]?[ORG] [ORG]
+
+매일 아침 출근하시는 거죠? 
+
+매일[ORG] 아침[ORG] 출[ORG]근[ORG]하시는[ORG] [ORG]거죠[ORG]?[ORG] [ORG]
+
+법무사 가요? 
+
+법[ORG]무[ORG]사[ORG] [ORG]가요[ORG]?[ORG] [ORG]
+
+네, 맞습니다. 
+
+네[ORG],[ORG] 맞[ORG]습니다[ORG].[ORG] [ORG]
+
+네, 저희는 그렇게 알고 있습니다. 
+
+네[ORG],[ORG] 저희[ORG]는[ORG] 그렇게[ORG] 알고[ORG] 있습니다[ORG].[ORG] [ORG]
+
+안녕하세요? 
+
+안녕하세요[ORG]?[ORG] [ORG]
+
+감사합니다. 
+
+감사합니다[ORG].[ORG] [ORG]
+
+안녕하세요? 
+
+안녕하세요[ORG]?[ORG] [ORG]
+
+안녕하세요? 
+
+안녕하세요[ORG]?[ORG] [ORG]
+
+안녕하세요? 
+
+안녕하세요[ORG]?[ORG] [ORG]
+
+안녕하세요? 
+
+안녕하세요[ORG]?[ORG] [ORG]
+
+교수님, 건강하시죠? 
+
+교수[ORG]님[ORG],[ORG] 건강[ORG]하시[ORG]죠[ORG]?[ORG] [ORG]
+
+안녕하십니까? 
+
+안[ORG]녕[ORG]하[ORG]십[ORG]니까[ORG]?[ORG] [ORG]
+
+안녕하세요? 
+
+안녕하세요[ORG]?[ORG] [ORG]
+
+아, 증액될 것이다? 
+
+아[ORG],[ORG] 증[ORG]액[ORG]될[ORG] 것이다[ORG]?[ORG] [ORG]
+
+안녕하세요? 
+
+안녕하세요[ORG]?[ORG] [ORG]
+
+감사합니다. 
+
+감사합니다[ORG].[ORG] [ORG]
+
+아, 해제가 됐나요? 
+
+아[ORG],[ORG] 해[ORG]제가[ORG] [ORG]됐[ORG]나요[ORG]?[ORG] [ORG]
+
+그렇죠, 그렇죠. 
+
+그[ORG]렇[ORG]죠[ORG],[ORG] 그[ORG]렇[ORG]죠[ORG].[ORG] [ORG]
+
+아니에요? 
+
+아니[ORG]에[ORG]요[ORG]?[ORG] [ORG]
+
+안녕하십니까? 
+
+안[ORG]녕[ORG]하[ORG]십[ORG]니까[ORG]?[ORG] [ORG]
+
+1장? 
+
+1[ORG]장[ORG]?[ORG] [ORG]
+
+안녕하세요? 
+
+안녕하세요[ORG]?[ORG] [ORG]
+
+감사합니다. 
+
+감사합니다[ORG].[ORG] [ORG]
+
+안녕하세요? 
+
+안녕하세요[ORG]?[ORG] [ORG]
+
+예, 들었습니다. 
+
+예[ORG],[ORG] 들[ORG]었습니다[ORG].[ORG] [ORG]
+
+네, 그렇습니다. 
+
+네[ORG],[ORG] 그[ORG]렇[ORG]습니다[ORG].[ORG] [ORG]
+
+안녕하세요? 
+
+안녕하세요[ORG]?[ORG] [ORG]
+
+동의하세요? 
+
+동의[ORG]하세요[ORG]?[ORG] [ORG]
+
+안녕하십니까? 
+
+안[ORG]녕[ORG]하[ORG]십[ORG]니까[ORG]?[ORG] [ORG]
+
+네, 그렇습니다. 
+
+네[ORG],[ORG] 그[ORG]렇[ORG]습니다[ORG].[ORG] [ORG]
+
+안녕하십니까? 
+
+안[ORG]녕[ORG]하[ORG]십[ORG]니까[ORG]?[ORG] [ORG]
+
+안녕하십니까? 
+
+안[ORG]녕[ORG]하[ORG]십[ORG]니까[ORG]?[ORG] [ORG]
+
+예. 
+
+예[ORG].[ORG] [ORG]
+
+예, 맞습니다. 
+
+예[ORG],[ORG] 맞[ORG]습니다[ORG].[ORG] [ORG]
+
+안녕하세요? 
+
+안녕하세요[ORG]?[ORG] [ORG]
+
+예. 
+
+예[ORG].[ORG] [ORG]
+
+안녕하세요? 
+
+안녕하세요[ORG]?[ORG] [ORG]
+
+안녕하세요? 
+
+안녕하세요[ORG]?[ORG] [ORG]
+
+11.7조죠. 
+
+11.[ORG]7[ORG]조[ORG]죠[ORG].[ORG] [ORG]
+
+감사합니다. 
+
+감사합니다[ORG].[ORG] [ORG]
+
+네, 감사합니다. 
+
+네[ORG],[ORG] 감사합니다[ORG].[ORG] [ORG]
+
+아, 받으셨어요? 
+
+아[ORG],[ORG] 받으[ORG]셨[ORG]어요[ORG]?[ORG] [ORG]
+
+감사합니다. 
+
+감사합니다[ORG].[ORG] [ORG]
+
+50년 동안 한 번도 없으셨어요? 
+
+50[ORG]년[ORG] 동안[ORG] 한[ORG] 번[ORG]도[ORG] 없[ORG]으[ORG]셨[ORG]어요[ORG]?[ORG] [ORG]
+
+답답해서? 
+
+답[ORG]답[ORG]해서[ORG]?[ORG] [ORG]
+
+그렇죠, 맞아요. 
+
+그[ORG]렇[ORG]죠[ORG],[ORG] 맞아[ORG]요[ORG].[ORG] [ORG]
+
+안녕하세요? 
+
+안녕하세요[ORG]?[ORG] [ORG]
+
+안녕하십니까? 
+
+안[ORG]녕[ORG]하[ORG]십[ORG]니까[ORG]?[ORG] [ORG]
+
+네. 
+
+네[ORG].[ORG] [PER]
+
+네, 맞습니다. 
+
+네[ORG],[ORG] 맞[ORG]습니다[ORG].[ORG] [ORG]
+
+그 이후에는요? 
+
+그[ORG] 이후[ORG]에는[ORG]요[ORG]?[ORG] [ORG]
+
