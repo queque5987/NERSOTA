@@ -5,9 +5,9 @@ from transformers import pipeline
 # pip install torch 1.12.1
 # https://aka.ms/vs/16/release/vc_redist.x64.exe
 
-# from transformers import AutoTokenizer, AutoModelForTokenClassification
-# tokenizer = AutoTokenizer.from_pretrained("jplu/tf-xlm-r-ner-40-lang")#, use_fast = False)
-# model = AutoModelForTokenClassification.from_pretrained("jplu/tf-xlm-r-ner-40-lang", from_tf=True)
+from transformers import AutoTokenizer, AutoModelForTokenClassification
+tokenizer = AutoTokenizer.from_pretrained("jplu/tf-xlm-r-ner-40-lang")#, use_fast = False)
+model = AutoModelForTokenClassification.from_pretrained("jplu/tf-xlm-r-ner-40-lang", from_tf=True)
 
 class tfxml():
     def __init__(self):
@@ -20,8 +20,9 @@ class tfxml():
             framework="tf"
         )
     def inference(self, text):
-        output = nlp_ner(text)
+        output = self.nlp_ner(text)
         temp_text = text
+        n = 0
         for out in output:
                 temp_text = temp_text[:out['end']+n] + "[{}]".format(out['entity']) + temp_text[out['end']+n:]
                 n += len(out['entity'])+2
@@ -34,13 +35,14 @@ if __name__ == "__main__":
         tokenizer=(
             'jplu/tf-xlm-r-ner-40-lang',  
             {"use_fast": True}),
-        framework="tf",
-        device = "cpu"
+        framework="tf"
     )
 
     text = "서울 전역에 내리는 소나기는 현대 기아 모터스의 주가 상승에 긍정적인 영향을 끼쳤다."
 
     output = nlp_ner(text)
+
+    # string 형식
     n = 0
     for out in output:
         text = text[:out['end']+n] + "[{}]".format(out['entity']) + text[out['end']+n:]
