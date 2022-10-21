@@ -7,8 +7,8 @@ import re
 # import tfxlmrner40lang as xlm
 
 def dataset_xlm():
-    # dat_categories = ["c_event", "fm_drama", "fs_drama", "enter", "culture", "history"]
-    dat_categories = ["fm_drama", "fs_drama", "enter", "culture", "history"]
+    dat_categories = ["c_event", "fm_drama", "fs_drama", "enter", "culture", "history"]
+    # dat_categories = ["fm_drama", "fs_drama", "enter", "culture", "history"]
     # txlm = xlm.tfxml()
     for dat_category in dat_categories:
         print("processing --- {}".format(dat_category))
@@ -55,4 +55,5 @@ def dataset_NIKL_NEv1():
     print("done")
 
 if __name__ == "__main__":
-    dataset_NIKL_NEv1()
+    dataset_xlm()
+    # dataset_NIKL_NEv1()

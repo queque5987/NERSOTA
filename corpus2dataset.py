@@ -1,4 +1,3 @@
-from importlib.resources import path
 import json
 from operator import concat
 import re
@@ -59,9 +58,9 @@ def corpus2dataset(file_dir : Path, dict_edit = None, file_list = None, do_ner =
     elif concat_data == True:
         import os
         sentences = ['']
-        info = {'sentences' : 0, 'sum_length' : 0, 'average_length' : 0}
+        info = {'sentences' : 0, 'sum_length' : 0, 'average_length' : 0, 'domains' : {}}
+        domain = {}
         for datum in tqdm(os.scandir(file_dir)):
-            domain = {}
             if datum.name[-4:] == 'json':
                 with open(Path(datum), "r", encoding='utf-8') as file:
                     corpus = json.load(file)
@@ -69,7 +68,7 @@ def corpus2dataset(file_dir : Path, dict_edit = None, file_list = None, do_ner =
                     for utter in corpus['document'][0]['utterance']:
                         cate = [a for a in corpus['metadata']['category'].split(' > ')[1:]]
                         u = re.sub(r"[^\uAC00-\uD7A30-9a-zA-Z\s\.\,\?]", "", utter['original_form'])
-                        if len(utter['original_form']) == 0 or utter['original_form'][-1] in ['요', '다', '.']:
+                        if len(utter['original_form']) == 0 or utter['original_form'][-1] in ['요', '다', '.', '?']:
                             sentences[i] += u
                             sentences[i] = [sentences[i], cate]
                             i += 1
@@ -89,6 +88,7 @@ def corpus2dataset(file_dir : Path, dict_edit = None, file_list = None, do_ner =
                 except:
                     if switch: domain[cate[0]] = {}
                     domain[cate[0]][cate[1]] = len(sentences)
+        info['domains'] = domain
         info['average_length'] = info['sum_length'] / info['sentences']
         # print(sentences[:10])
         # print(domain)
@@ -107,10 +107,41 @@ def corpus2dataset(file_dir : Path, dict_edit = None, file_list = None, do_ner =
                     if j.name[-4:] == 'json':
                         corpus2dataset(Path(j), dict_edit=['', '중분류', '소분류', '', '원문'], do_ner=False)
         print('done!')
-            
-            
+
+def dataset_xlm():
+    import os
+
+    dat_categories = ["c_event", "fm_drama", "fs_drama", "enter", "culture", "history"]
+    texts = []
+    info = {'sentences' : 0, 'sum_length' : 0, 'average_length' : 0, 'domains' : {}}
+    domain = {'시사', '가족관련방송', '현대드라마', '예능', '교양지식', '역사극'}
+    for dat_category in dat_categories:
+        print("processing --- {}".format(dat_category))
+        data_dir = Path("corpus/방송대본요약/1.Training/원천데이터/TS1/{}".format(dat_category))
+        data = os.scandir(data_dir)
+        for dat in data:
+            print(dat)
+            cate_dir = os.path.join(data_dir, dat)
+            for subcate in os.scandir(dat):
+                with open(subcate, "r", encoding = 'utf-8') as file:
+                    d_json = json.load(file)
+                    dddd = d_json['Meta']['passage'].strip().split("\n")
+                    for ddd in dddd:
+                        index = ddd.find(']')
+                        if (dat_category == "fm_drama" or dat_category == "fs_drama") and ddd[:index] == "해설":
+                            continue
+                        g_index = ddd.find('(')
+                        ge_index = ddd.find(')')
+                        if g_index and ge_index:
+                            dd = ddd[index+1:g_index] + ddd[ge_index+1:]
+                        # print(dd)
+                        # print('-----')
+                        texts.append(dd)
+
+    print("done")  
 
 if __name__ == "__main__":
     # corpus2dataset(Path("corpus/025.일상생활 및 구어체 한-영 번역 병렬 말뭉치 데이터/01.데이터/1.Training/라벨링데이터/TL2/일상생활및구어체_한영_train_set.json"))
     # corpus2dataset(Path("corpus/027.일상생활 및 구어체 한-중, 한-일 번역 병렬 말뭉치 데이터/01.데이터/1_Training/라벨링데이터/TL1"), file_list = ["한일", "한중"])
-    corpus2dataset(Path("corpus\국립국어원 구어 말뭉치(버전 1.2)"), concat_data = True)
+    # corpus2dataset(Path("corpus\국립국어원 구어 말뭉치(버전 1.2)"), concat_data = True)
+    dataset_xlm()
