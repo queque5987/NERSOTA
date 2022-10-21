@@ -1,4 +1,8 @@
 KoBERT-NER/
-.env/
+*.env/
 방송대본요약/
 __pycache__/
+corpus/
+*.json
+*.csv
+*.xlsx

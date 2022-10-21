@@ -68,8 +68,10 @@ if __name__ == "__main__":
     # with open("xlm_entities_to_analyse_diff.txt", "w", encoding= "utf-8") as file:
     #     for dat in temp_entity:
     #         file.write("{}\n{}\n".format(dat[0], dat[1]))
-    
-    per_entity = []
+    per_entity = {'OriginalToken' : [],
+     'NE/Total' : [],
+     'NE' : [],
+     'Total' : []}
     for entity in entity_hmap.values():
         s = 0
         d = 0
@@ -84,10 +86,15 @@ if __name__ == "__main__":
                 s += entity[i+1]
             else:
                 d += entity[i+1]
-        per_entity.append([original_token, d/(s+d)*100, d, s+d])
+        per_entity['OriginalToken'].append(original_token)
+        per_entity['NE/Total'].append(d/(s+d)*100)
+        per_entity['NE'].append(d)
+        per_entity['Total'].append(s+d)
     
-    print(per_entity[:20])
     df = pd.DataFrame(per_entity)
-    df.to_excel("xlm_entities_to_analyse_recognized_as_NE_per_total.xlsx", sheet_name= 'new_name', index= False, header= False)
+    # df.to_excel("xlm_entities_to_analyse_recognized_as_NE_per_total.xlsx", sheet_name= 'new_name', index= False, header= False)
 
+    with pd.ExcelWriter('xlm_c_event.xlsx') as writer:
+        df.to_excel(writer, sheet_name='NE_per_total')
+        df[df.Total >= 20].to_excel(writer, sheet_name='cut_below_20')
     print('done')
