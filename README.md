@@ -27,7 +27,7 @@ drop_tag_dict = {
 }
 find_overlap_token(dir, do_drop = do_drop, drop_tag_dict)
 ```
-new_corpus_no_overlap.csv에 포함된 태그들 ('-' 이후, 세부 태그의 경우는 _이하 절삭됨 ex) PS_PERSON -> PS)
+new_corpus_no_overlap.csv에 포함된 태그들 ('-' 이후, 세부 태그의 경우는 _이하 절삭됨 ex) PS_PERSON -> PS, PERSON과 PS_... 태그가 동시에 있음)
 ```Python
 [PERSON - 'PERSON' == 'PS',
      STUDY FIELD - 'FD', 
