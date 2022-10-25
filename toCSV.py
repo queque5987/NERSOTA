@@ -227,6 +227,19 @@ def find_overlap_token(dir : Path, do_concat = False, do_drop = False, name = ""
      PRODUCT == 'AFW_', 'PRODUCT',
      WORK_OF_ART == 'AFA_', 'WORK_OF_ART']
     """
+
+def train_validation_split(dir = Path("new_corpus/new_corpus_no_overlap.csv", portion = 0.001)):
+    import random
+    random.seed(portion)
+    df = pd.read_csv(dir, sep=',')
+    length = list(range(len(df)))
+    l = random.sample(length, int(len(df)*portion))
+    for i in l: length.remove(i)
+    val_df = pd.DataFrame([df.loc[i] for i in l])
+    train_df = pd.DataFrame([df.loc[i] for i in length])
+    val_df.to_csv("new_corpus/{}_val_{}.csv".format(dir.name, portion),index=False)
+    train_df.to_csv("new_corpus/{}_train_{}.csv".format(dir.name, portion),index=False)
+
 if __name__ == "__main__":
     # corpus_dir = "corpus/NIKL_EL_2021_v1.1/국립국어원 개체명 분석 말뭉치 개체 연결 2021(버전 1.1)"
     # corpus_dir = Path(corpus_dir)
@@ -234,15 +247,16 @@ if __name__ == "__main__":
     # with open("AIHub_new_ner_corpus_221022.json",'w', encoding='utf-8') as file:
     #     write_csv(json_dir)
 
-    # find_overlap_token(Path("new_corpus/{}3.csv".format("new_corpus")), do_concat=True)
-    find_overlap_token(Path("new_corpus/{}3.csv".format("new_corpus")), do_drop=True, name = "xlmr", drop_tag_dict = {
-    'PER' : ['PERSON', 'PS'],
-    'ORG' : ['OGG', 'ORG'],
-    'LOC' : ['LC','LCG', 'LCP']
-    })
+    # find_overlap_token(Path("new_corpus/{}.csv".format("new_corpus_no_overlap")), do_concat=True, name = 'v2')
+    # find_overlap_token(Path("new_corpus/{}3.csv".format("new_corpus")), do_drop=True, name = "xlmr", drop_tag_dict = {
+    # 'PER' : ['PERSON', 'PS'],
+    # 'ORG' : ['OGG', 'ORG'],
+    # 'LOC' : ['LC','LCG', 'LCP']
+    # })
 
     # with open('new_corpus/newcorpus_text.txt', 'w', encoding='utf-8') as file:
     #     df = pd.read_csv('new_corpus/new_corpus_no_overlap_drop_xlmr.csv', sep = ',')
     #     for d in df['ko_original']:
     #         file.write("{}\n".format(re.sub(r"[^\uAC00-\uD7A3a-zA-Z\s.,?]", "", d).strip()))
     # print('done')
+
