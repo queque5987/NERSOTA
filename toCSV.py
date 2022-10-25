@@ -228,17 +228,26 @@ def find_overlap_token(dir : Path, do_concat = False, do_drop = False, name = ""
      WORK_OF_ART == 'AFA_', 'WORK_OF_ART']
     """
 
-def train_validation_split(dir = Path("new_corpus/new_corpus_no_overlap.csv", portion = 0.001)):
+def train_validation_split(dir = Path("new_corpus/new_corpus_no_overlap.csv"), portion = 0.1):
     import random
     random.seed(portion)
     df = pd.read_csv(dir, sep=',')
-    length = list(range(len(df)))
-    l = random.sample(length, int(len(df)*portion))
-    for i in l: length.remove(i)
-    val_df = pd.DataFrame([df.loc[i] for i in l])
-    train_df = pd.DataFrame([df.loc[i] for i in length])
-    val_df.to_csv("new_corpus/{}_val_{}.csv".format(dir.name, portion),index=False)
+    train = list(range(len(df)))
+
+    test = random.sample(train, int(len(df)*portion))
+    for i in test: train.remove(i)
+
+    val = random.sample(train, int(len(df)*portion))
+    for i in val: train.remove(i)
+
+    print("test : {}\nvalidation : {}\ntrain : {}".format(len(test), len(val), len(train)))
+
+    test_df = pd.DataFrame([df.loc[i] for i in test])
+    train_df = pd.DataFrame([df.loc[i] for i in train])
+    val_df = pd.DataFrame([df.loc[i] for i in val])
+    test_df.to_csv("new_corpus/{}_test_{}.csv".format(dir.name, portion),index=False)
     train_df.to_csv("new_corpus/{}_train_{}.csv".format(dir.name, portion),index=False)
+    val_df.to_csv("new_corpus/{}_val_{}.csv".format(dir.name, portion),index=False)
 
 if __name__ == "__main__":
     # corpus_dir = "corpus/NIKL_EL_2021_v1.1/국립국어원 개체명 분석 말뭉치 개체 연결 2021(버전 1.1)"
@@ -260,3 +269,4 @@ if __name__ == "__main__":
     #         file.write("{}\n".format(re.sub(r"[^\uAC00-\uD7A3a-zA-Z\s.,?]", "", d).strip()))
     # print('done')
 
+    train_validation_split(portion = 0.1)
