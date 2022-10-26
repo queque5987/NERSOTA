@@ -10,36 +10,6 @@ import re
 우리 장훈 씨 같은 남편을 어디서 만나요.,>우리 <PERSON>장훈</PERSON> 씨 같은 남편을 어디서 만나요.,"[{'tag': 'PERSON', 'value': '장훈', 'position': '[4, 6]'}]"
 """
 
-<<<<<<< HEAD
-def write_csv(corpus_dir : Path, idx, writer):
-    
-
-    for i, j in enumerate(json_dir):
-        if i == idx:
-            NEs = []
-            ko_original = ''
-            nertext = ''
-            nertags = []
-            # {'tag': 'PERSON', 'value': '허경환', 'position': '[0, 3]'}
-            with open(j, encoding='utf-8') as j_file:
-                j_dict = json.load(j_file)
-
-                for j_dict_doc in tqdm(j_dict['document']):
-                    for j_dict_doc_sen in j_dict_doc['sentence']:
-                        ko_original = j_dict_doc_sen['form']
-                        # ko_original = j_dict['document'][0]['sentence'][0]['form']
-                        nertext = ko_original
-                        NEs = j_dict_doc_sen['NE']
-                        # NEs = j_dict['document'][0]['sentence'][0]['NE']
-                        n = 0
-                        for ne in NEs:
-                            nertext = nertext[:ne['begin']+n] + "<{}>".format(ne['label']) +  nertext[ne['begin']+n:ne['end']+n] + "</{}>".format(ne['label']) + nertext[ne['end']+n:]
-                            n += (len(ne['label'])*2 + len("<></>"))
-                            nertags.append({'tag' : ne['label'], 'value' : ne['form'], 'position' : [ne['begin'], ne['end']]})
-                        if len(nertags) > 0 : writer.writerow({'ko_original' : ko_original, 'ner.text' : nertext, 'ner.tags' : nertags})
-            
-    print('done')
-=======
 def write_csv(json_dir):
     ko_originals = []
     nertexts = []
@@ -51,7 +21,6 @@ def write_csv(json_dir):
         # {'tag': 'PERSON', 'value': '허경환', 'position': '[0, 3]'}
         with open(j,'r', encoding='utf-8') as j_file:
             j_dict = json.load(j_file)
->>>>>>> c6bb01e43dfa9ce0e40258d76d322d37f4e841ff
             
             for j_dict_doc in j_dict['document']:
                 pub = j_dict_doc['metadata']['publisher']
@@ -145,7 +114,7 @@ def find_overlap_token(dir : Path, do_concat = False, do_drop = False, name = ""
     'ORG' : ['OGG', 'ORG'],
     'PRODUCT' : ['AFW', 'PRODUCT'],
     'WORK_OF_ART' : ['AFA', 'WORK_OF_ART']
-    }):
+    }, no_drop_do_O = False):
 
     if do_concat == do_drop: return 0
     tag_list = """
@@ -218,8 +187,10 @@ def find_overlap_token(dir : Path, do_concat = False, do_drop = False, name = ""
                         exists = True
                         break
                 if not exists:
-                    texts = texts.replace("<{}>".format(tag['tag']), "")
-                    texts = texts.replace("</{}>".format(tag['tag']), "")
+                    to_replace = ""
+                    if no_drop_do_O: tags[ti]['tag'] = 'O'
+                    texts = texts.replace("<{}>".format(tag['tag']), to_replace)
+                    texts = texts.replace("</{}>".format(tag['tag']), to_replace)
                     to_del_tag.append(tag)
                 else:
                     t = tag['tag']
@@ -228,7 +199,7 @@ def find_overlap_token(dir : Path, do_concat = False, do_drop = False, name = ""
                             continue
                     except:
                         hmap[hash(t)] = t
-        if do_drop:
+        if do_drop and not no_drop_do_O:
             if len(tags) == len(to_del_tag):
                 to_del.append(di)
                 continue
@@ -242,7 +213,7 @@ def find_overlap_token(dir : Path, do_concat = False, do_drop = False, name = ""
     if do_concat:
         df.to_csv("new_corpus/{}_{}.csv".format("new_corpus_no_overlap_concat", name),index=False)
     if do_drop:
-        df.to_csv("new_corpus/{}_{}.csv".format("new_corpus_no_overlap_no_drop", name),index=False)
+        df.to_csv("corpus/{}_{}.csv".format("new_corpus_no_overlap_no_drop", name),index=False)
         # df_del = df.drop(to_del)
         # df_del.to_csv("new_corpus/{}_{}.csv".format("new_corpus_no_overlap_drop", name),index=False)
     """
@@ -297,35 +268,18 @@ def train_validation_split(dir = Path("new_corpus/new_corpus_no_overlap.csv"), p
     val_df.to_csv("new_corpus/{}_val_{}.csv".format(dir.name, portion),index=False)
 
 if __name__ == "__main__":
-    corpus_dir = "corpus/NIKL_EL_2021_v1.1/국립국어원 개체명 분석 말뭉치 개체 연결 2021(버전 1.1)"
-    corpus_dir = Path(corpus_dir)
-    json_dir = get_json_list(corpus_dir)
-<<<<<<< HEAD
-    # with open("AIHub_new_ner_corpus.csv",'r', newline='', encoding='utf-8') as file:
-    #     reader = csv.DictReader(file)
-    #     fieldnames = []
-    #     for row in reader:
-    #         fieldnames = list(row.keys())
-    #         break
-        
-        # with open("AIHub_new_ner_corpus.csv",'a', newline='', encoding='utf-8') as file:
-        #     writer = csv.DictWriter(file, fieldnames=fieldnames)
-        #     for i in tqdm(range(272)):
-        #         write_csv(corpus_dir, i, writer)
-    with open("AIHub_new_ner_corpus_221022.csv",'w', newline='', encoding='utf-8') as file:
-        writer = csv.DictWriter(file, fieldnames=['ko_original', 'ner.text', 'ner.tags'])
-        for i in tqdm(range(272)):
-            write_csv(corpus_dir, i, writer)
-=======
-    # with open("AIHub_new_ner_corpus_221022.json",'w', encoding='utf-8') as file:
-    write_csv(json_dir)
+    # corpus_dir = "corpus/NIKL_EL_2021_v1.1/국립국어원 개체명 분석 말뭉치 개체 연결 2021(버전 1.1)"
+    # corpus_dir = Path(corpus_dir)
+    # json_dir = get_json_list(corpus_dir)
+    # # with open("AIHub_new_ner_corpus_221022.json",'w', encoding='utf-8') as file:
+    # write_csv(json_dir)
 
     # find_overlap_token(Path("new_corpus/{}.csv".format("new_corpus_no_overlap")), do_concat=True, name = 'v2')
-    # find_overlap_token(Path("new_corpus/{}.csv".format("new_corpus_no_overlap.csv_test_0.1")), do_drop=True, name = "xlmr", drop_tag_dict = {
-    # 'PER' : ['PERSON', 'PS'],
-    # 'ORG' : ['OGG', 'ORG'],
-    # 'LOC' : ['LC','LCG', 'LCP']
-    # })
+    find_overlap_token(Path("corpus/{}.csv".format("new_corpus_no_overlap_no_drop_xlmr_test_0.1")), do_drop=True, name = "xlmr221026", drop_tag_dict = {
+    'PER' : ['PERSON', 'PS', 'PER'],
+    'ORG' : ['OGG', 'ORG'],
+    'LOC' : ['LC','LCG', 'LCP', 'LOC']
+    }, no_drop_do_O = True)
 
     # with open('new_corpus/newcorpus_text.txt', 'w', encoding='utf-8') as file:
     #     df = pd.read_csv('new_corpus/new_corpus_no_overlap_drop_xlmr.csv', sep = ',')
@@ -335,4 +289,3 @@ if __name__ == "__main__":
 
     # train_validation_split(portion = 0.1)
     # find_overlap_token(Path("new_corpus/new_corpus_no_overlap.csv"), do_concat=True)
->>>>>>> c6bb01e43dfa9ce0e40258d76d322d37f4e841ff
