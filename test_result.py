@@ -11,6 +11,9 @@ def BIO_corpus(file_dir, result_file_dir):
     new_df = {'ko_original' : [], 'output' : []}
     for i, outputs in tqdm(enumerate(df['ner.tags'])): #['ko_original', 'ner.tags'...]
         ko_original = df['ko_original'][i]
+        spaces = []
+        for i, ko in enumerate(ko_original):
+            if ko == ' ':
         new_output = ['O' for _ in range(len(ko_original))]
         
         output = eval(outputs)
@@ -93,8 +96,10 @@ def BIO_corpus_token(file_dir, result_file_dir): #"'본 제품은 한국의료�
                         new_output[j] = "B-{}".format(tag['tag'])                    
                     else:
                         new_output[j] = "I-{}".format(tag['tag'])
+        print(new_output)
         new_df['ko_original'].append(ko_original)
         new_df['output'].append(new_output)
+        break
     print(new_df)
     new_df = pd.DataFrame(new_df)
     new_df.to_csv('{}'.format(result_file_dir))
