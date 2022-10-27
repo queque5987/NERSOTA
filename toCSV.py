@@ -188,7 +188,7 @@ def find_overlap_token(dir : Path, do_concat = False, do_drop = False, name = ""
                         break
                 if not exists:
                     to_replace = ""
-                    if no_drop_do_O: tags[ti]['tag'] = 'O'
+                    # if no_drop_do_O: tags[ti]['tag'] = 'O'
                     texts = texts.replace("<{}>".format(tag['tag']), to_replace)
                     texts = texts.replace("</{}>".format(tag['tag']), to_replace)
                     to_del_tag.append(tag)
@@ -199,8 +199,8 @@ def find_overlap_token(dir : Path, do_concat = False, do_drop = False, name = ""
                             continue
                     except:
                         hmap[hash(t)] = t
-        if do_drop and not no_drop_do_O:
-            if len(tags) == len(to_del_tag):
+        if do_drop:
+            if len(tags) == len(to_del_tag) and not no_drop_do_O:
                 to_del.append(di)
                 continue
             else:
@@ -244,6 +244,20 @@ def find_overlap_token(dir : Path, do_concat = False, do_drop = False, name = ""
      ORG == 'OGG_', 'ORG',
      PRODUCT == 'AFW_', 'PRODUCT',
      WORK_OF_ART == 'AFA_', 'WORK_OF_ART']
+
+    spacy??
+    [PS - 'PERSON' == 'PS',
+        PS person
+     OG - 'OGG' == 'ORG',
+        OG organization
+     LC - 'LC','LCG', 'LCP',
+        LC location
+     DT - 'DT', 
+        DT date
+     TI - 'TI',
+        TI time
+     QT - 'QT',
+        QT quantity]
     """
 
 def train_validation_split(dir = Path("new_corpus/new_corpus_no_overlap.csv"), portion = 0.1):
@@ -275,10 +289,13 @@ if __name__ == "__main__":
     # write_csv(json_dir)
 
     # find_overlap_token(Path("new_corpus/{}.csv".format("new_corpus_no_overlap")), do_concat=True, name = 'v2')
-    find_overlap_token(Path("corpus/{}.csv".format("new_corpus_no_overlap_no_drop_xlmr_test_0.1")), do_drop=True, name = "xlmr221026", drop_tag_dict = {
-    'PER' : ['PERSON', 'PS', 'PER'],
-    'ORG' : ['OGG', 'ORG'],
-    'LOC' : ['LC','LCG', 'LCP', 'LOC']
+    find_overlap_token(Path("corpus/new_corpus_no_overlap.csv_test_0.1_no_special.csv"), do_drop=True, name = "spacy221027", drop_tag_dict = {
+    'PS' : ['PERSON', 'PS', 'PER'],
+    'OG' : ['OGG', 'ORG'],
+    'LC' : ['LC','LCG', 'LCP', 'LOC'],
+    'DT' : ['DT'], 
+    'TI' : ['TI'],
+    'QT' : ['QT']
     }, no_drop_do_O = True)
 
     # with open('new_corpus/newcorpus_text.txt', 'w', encoding='utf-8') as file:
@@ -289,3 +306,12 @@ if __name__ == "__main__":
 
     # train_validation_split(portion = 0.1)
     # find_overlap_token(Path("new_corpus/new_corpus_no_overlap.csv"), do_concat=True)
+
+    # df = pd.read_csv("corpus/new_corpus_no_overlap.csv_test_0.1.csv", sep = ',')
+    # with_special = []
+    # for i, d in enumerate(df['ko_original']):
+    #     with_special.append(d)
+    #     df.loc[i, 'ko_original'] = re.sub(r"[^\uAC00-\uD7A3a-zA-Z0-9~,.?\s]", "", d).strip()
+    # df['w/special'] = with_special
+    # df.to_csv('corpus/new_corpus_no_overlap.csv_test_0.1_no_special.csv', sep=',')
+    # print('done')
