@@ -11,9 +11,9 @@ def BIO_corpus(file_dir, result_file_dir):
     new_df = {'ko_original' : [], 'output' : []}
     for i, outputs in tqdm(enumerate(df['ner.tags'])): #['ko_original', 'ner.tags'...]
         ko_original = df['ko_original'][i]
-        spaces = []
-        for i, ko in enumerate(ko_original):
-            if ko == ' ':
+        # spaces = []
+        # for i, ko in enumerate(ko_original):
+        #     if ko == ' ':
         new_output = ['O' for _ in range(len(ko_original))]
         
         output = eval(outputs)
@@ -21,9 +21,13 @@ def BIO_corpus(file_dir, result_file_dir):
             pos = eval(str(tag['position']))
             if tag['tag'] != 'O':
                 for j in range(int(pos[0]), int(pos[1])):
+                    print(tag)
+                    print(output)
                     if j == pos[0]:
                         new_output[j] = "B-{}".format(tag['tag'])
-                    else: new_output[j] = "I-{}".format(tag['tag'])
+                    else:
+                        print(df['ko_original'][i])
+                        new_output[j] = "I-{}".format(tag['tag'])
         new_df['ko_original'].append(ko_original)
         new_df['output'].append(new_output)
     new_df = pd.DataFrame(new_df)
@@ -33,18 +37,18 @@ def BIO_xlmr(file_dir, result_file_dir):
     result = Path(file_dir)
     df = pd.read_csv(result)
     
-    for i, outputs in tqdm(enumerate(df['output'])): #['ko_original', 'output']
-        ko_original = df['ko_original'][i]
+    for i, outputs in tqdm(enumerate(df['ner'])): #['ko_original', 'output']
+        ko_original = df['sentence'][i]
         new_output = ['O' for _ in range(len(ko_original))]
 
         output = eval(outputs)
         # if len(output) > 0:
         for tag in output: #['entity', 'score', 'index', 'word', 'start', 'end']
-            for j in range(tag['start'],tag['end']):
-                if j == tag['start']:
+            for j in range(eval(str(tag['position']))[0],eval(str(tag['position']))[1]):
+                if j == eval(str(tag['position']))[0]:
                     new_output[j] = "B-{}".format(tag['entity'])
                 else: new_output[j] = "I-{}".format(tag['entity'])
-        df.loc[i, 'output'] = new_output
+        df.loc[i, 'ner'] = str(new_output)
     df.to_csv('{}'.format(result_file_dir))
     print('done')
 
@@ -110,7 +114,7 @@ def getScores(p_dir, y_dir):
 
     p = pd.read_csv(p_dir)
     y = pd.read_csv(y_dir)
-    p = p['output'].values.tolist()
+    p = p['ner'].values.tolist()
     y = y['output'].values.tolist()
     p_new = []
     for pp in p:
@@ -123,19 +127,19 @@ def getScores(p_dir, y_dir):
             y_new.append(ppp)
     p = p_new
     y = y_new
-    print('model : {}'.format('spacy'))
+    print('model : {}'.format('LETR'))
     print('accuracy', metrics.accuracy_score(y,p))
     print('precision', metrics.precision_score(y,p,average='micro'))
     print('recall', metrics.recall_score(y,p,average='micro'))
     print('f1 micro', metrics.f1_score(y,p,average='micro'))
     print('f1 macro', metrics.f1_score(y,p,average='macro'))
 
-    print(metrics.classification_report(y,p))
+    print(metrics.classification_report(y,p,zero_division=True))
     # print(metrics.confusion_matrix(y,p))
 if __name__ == "__main__":
-    # BIO_corpus('corpus/new_corpus_no_overlap_no_drop_xlmr221026.csv', 'corpus/new_corpus_no_overlap_no_drop_xlmr_test_0.1_BIO_221026.csv')
-    # BIO_xlmr("output_test_xlm-roberta-large-finetuned-conll03-english.csv", "output_test_xlm-roberta-large-finetuned-conll03-english_renewed.csv")
+    # BIO_corpus('corpus/new_corpus_no_overlap_no_drop_letr___.csv', 'corpus/new_corpus_no_overlap_no_drop_letr221028.csv_bio.csv')
+    # BIO_xlmr("corpus/output_test_letr_API_no_cardinal.csv", "output_test_letr_API_no_cardinal.csv_renewed.csv")
     # BIO_spacy("output_test_spcay.csv", "output_test_spcay_renewed.csv")
-    BIO_corpus_token("corpus/new_corpus_no_overlap_no_drop_spacy221027.csv", "corpus/new_corpus_no_overlap_no_drop_spacy221027_special_test_0.1_BIO.csv")
-    # getScores("output_test_spcay_renewed.csv", "corpus/new_corpus_no_overlap_no_drop_spacy221027_test_0.1_BIO.csv")
+    # BIO_corpus_token("corpus/new_corpus_no_overlap_no_drop_spacy221027.csv", "corpus/new_corpus_no_overlap_no_drop_spacy221027_special_test_0.1_BIO.csv")
+    getScores("output_test_letr_API_no_cardinal.csv_renewed.csv", "corpus/new_corpus_no_overlap_no_drop_letr221028.csv_bio.csv")
     # getScores("output_test_xlm-roberta-large-finetuned-conll03-english_renewed.csv", 'corpus/new_corpus_no_overlap_no_drop_xlmr_test_0.1_BIO_221026.csv')
