@@ -94,7 +94,8 @@ if __name__ == "__main__":
     from tqdm import tqdm
     import time
     import random
-    kcbert_model = kcbert.inference()
+    ckpt_name = 'epoch=9-val_loss=0.18'
+    kcbert_model = kcbert.inference('C:/nlpbook/checkpoint-ner/{}.ckpt'.format(ckpt_name))
     test_dataset = pd.read_csv('corpus/new_corpus_no_overlap.csv_test_0.1.csv_no_special.csv', sep=',')
     # lines = []
     lines = test_dataset['ko_original'].values.tolist()
@@ -130,7 +131,7 @@ if __name__ == "__main__":
         # break
     # print(lines[:1])
     output = pd.DataFrame(final_outputs)
-    output.to_csv('output_kc_bert_epoch1_loss_0.14.csv', index=False)
+    output.to_csv('output_kc_bert_{}.csv'.format(ckpt_name), index=False)
     # print('done')
             # f.write("{}\n".format(str(output)))
             # print(output)
