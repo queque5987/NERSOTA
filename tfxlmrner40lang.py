@@ -1,11 +1,11 @@
-# from transformers import pipeline
+from transformers import pipeline
 # import spacy
 # pip install --no-cache-dir transformers sentencepiece
 # pip install tensorflow <- ?
 # pip install torch 1.12.1
 # https://aka.ms/vs/16/release/vc_redist.x64.exe
 
-# from transformers import AutoTokenizer, AutoModelForTokenClassification
+from transformers import AutoTokenizer, AutoModelForTokenClassification, BertConfig, TFBertForSequenceClassification
 import requests
 import json
 # tokenizer = AutoTokenizer.from_pretrained("jplu/tf-xlm-r-ner-40-lang")#, use_fast = False)
@@ -37,6 +37,18 @@ class xlmr():
         self.classifier = pipeline("ner", model=model, tokenizer=tokenizer)
     def inference(self, text):
         return self.classifier(text)
+
+class kcbert():
+    def __init__(self):
+        self.tokenizer = AutoTokenizer.from_pretrained("beomi/kcbert-base")
+        self.config = BertConfig.from_json_file("kcbert/KcBERT-Finetune/ckpt/kcbert-base-naver-ner-ckpt/checkpoint-25000/config.json")
+        self.model = AutoModelForTokenClassification.from_pretrained("kcbert/KcBERT-Finetune/ckpt/kcbert-base-naver-ner-ckpt/checkpoint-25000/pytorch_model.bin", config=self.config)
+        # self.model = TFBertForSequenceClassification.from_pretrained("kcbert/KcBERT-Finetune/ckpt/kcbert-base-naver-ner-ckpt/checkpoint-25000/pytorch_model.bin", from_pt=True, config=self.config)
+        # model = AutoModelWithLMHead.from_pretrained("beomi/kcbert-base")
+        self.classifier = pipeline("ner", model=self.model, tokenizer=self.tokenizer)
+    def inference(self, text):
+        return self.classifier(text)
+
 class spacy_example():
     def __init__(self):
         self.nlp = spacy.load('ko_core_news_lg')
@@ -86,7 +98,7 @@ if __name__ == "__main__":
     # )
 
     
-    from train_1028 import train as kcbert
+    # from train_1028 import train as kcbert
     # text = "서울 전역에 내리는 소나기는 현대 기아 모터스의 주가 상승에 긍정적인 영향을 끼쳤다."
     # spcaye = spacy_example()
     # letr = letrAPI()
@@ -94,13 +106,14 @@ if __name__ == "__main__":
     from tqdm import tqdm
     import time
     import random
-    ckpt_name = 'epoch=9-val_loss=0.18'
-    kcbert_model = kcbert.inference('C:/nlpbook/checkpoint-ner/{}.ckpt'.format(ckpt_name))
-    test_dataset = pd.read_csv('corpus/new_corpus_no_overlap.csv_test_0.1.csv_no_special.csv', sep=',')
+    # ckpt_name = 'epoch=2-val_loss=0.06'
+    # kcbert_model = kcbert.inference('C:/nlpbook/checkpoint-ner/{}.ckpt'.format(ckpt_name))
+    test_dataset = pd.read_csv('corpus/new_corpus_no_overlap_no_drop_test_data_4_1109.csv', sep=',')
+    kcbert_model = kcbert()
     # lines = []
     lines = test_dataset['ko_original'].values.tolist()
     # print(len(lines))
-    total_output = []
+    # total_output = []
     # for i in tqdm(range(0, len(lines), 30)):
     #     idx = i+30
     #     if idx >= len(lines): idx = len(lines)
@@ -119,10 +132,11 @@ if __name__ == "__main__":
     for line in tqdm(test_dataset['ko_original']):
         outputs = []
         # lines.append(line.strip())
-        output = kcbert_model.inference_fn(line)
+        output = kcbert_model.inference(line)
+        # output = kcbert_model.inference_fn(line)
         # for result in output['result']:
         #     outputs.append(result)
-        final_outputs.append({'sentence' : line, 'result' : output['result']})
+        final_outputs.append({'sentence' : line, 'result' : output})
         # print(outputs)
         # break
         # output = xlmr.inference(line)
@@ -131,7 +145,7 @@ if __name__ == "__main__":
         # break
     # print(lines[:1])
     output = pd.DataFrame(final_outputs)
-    output.to_csv('output_kc_bert_{}.csv'.format(ckpt_name), index=False)
+    output.to_csv('output_kc_bert_{}_1110.csv'.format('ckpt_name'), index=False)
     # print('done')
             # f.write("{}\n".format(str(output)))
             # print(output)

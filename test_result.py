@@ -128,7 +128,8 @@ def getScores(p_dir, y_dir):
             y_new.append(ppp)
     p = p_new
     y = y_new
-    print('model : {}'.format('Spacy'))
+    print('model : {}'.format('KcBert'))
+    print('learning rate : 0.00005, epoch : 3, batch_size : 32, val_loss : 0.06')
     print('accuracy', metrics.accuracy_score(y,p))
     print('precision', metrics.precision_score(y,p,average='micro'))
     print('recall', metrics.recall_score(y,p,average='micro'))
@@ -143,6 +144,6 @@ if __name__ == "__main__":
     # BIO_spacy("output_test_spcay.csv", "output_test_spcay_renewed.csv")
     # BIO_corpus_token("corpus/new_corpus_no_overlap_no_drop_spacy221027.csv", "corpus/new_corpus_no_overlap_no_drop_spacy221027_special_test_0.1_BIO.csv")
     
-    getScores("output_test_spcay_renewed.csv", "corpus/new_corpus_no_overlap_no_drop_spacy221027_test_0.1_BIO.csv")
+    getScores("output_kc_bert_epoch=2-val_loss=0.06_1109.csv", "corpus/new_corpus_no_overlap_no_drop_train_data_4_1109.csv")
     # getScores("output_test_letr_API_no_cardinal.csv_renewed.csv", "corpus/new_corpus_no_overlap_no_drop_letr221028.csv_bio.csv")
     # getScores("output_test_xlm-roberta-large-finetuned-conll03-english_renewed.csv", 'corpus/new_corpus_no_overlap_no_drop_xlmr_test_0.1_BIO_221026.csv')

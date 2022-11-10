@@ -59,7 +59,7 @@ def write_csv(json_dir):
     # udf.to_csv("new_corpus/{}3.csv".format("new_corpus"),index=False)
     print(hmap.values())
     return 0
-def to_train_bert(corpus_dir : Path):
+def to_train_bert(corpus_dir : Path, mode : str):
     df = pd.read_csv(corpus_dir, sep=',')
     lines = []
     for i, ko in enumerate(df['ko_original']):
@@ -110,7 +110,7 @@ def to_train_bert(corpus_dir : Path):
             new_line = input()
         lines.append("{}␞{}".format(ko, new_line))
         # if i == 50: break
-    with open('train_1028/ner/val.txt', 'w', encoding='utf-8') as file:
+    with open('{}.txt'.format(mode), 'w', encoding='utf-8') as file:
         for i, line in tqdm(enumerate(lines)):
             file.write(line + "\n" if i < len(lines)-1 else line)
     print('done')
@@ -211,13 +211,13 @@ def find_overlap_token(dir : Path, do_concat = False, do_drop = False, name = ""
     to_del = []
     hmap = {}
     for di, d in tqdm(enumerate(df['ner.tags'])):
-        print("{} / {} - {}%".format(di, len(df['ner.tags']), di/len(df['ner.tags'])*100))
+        # print("{} / {} - {}%".format(di, len(df['ner.tags']), di/len(df['ner.tags'])*100))
         tags = (eval(d))
         texts = df['ner.text'][di]
         to_del_tag = []
         for ti, tag in enumerate(tags):
             if do_concat:
-                t = tag['tag'].split('_')[0] if tag['tag'] in tag_list else tag['tag']
+                t = tag['tag'].split('_')[0] #if tag['tag'] in tag_list else tag['tag']
                 for key, value in concat_tag_dict.items():
                     if t in value:
                         texts = texts.replace(tag['tag'], key)
@@ -233,21 +233,29 @@ def find_overlap_token(dir : Path, do_concat = False, do_drop = False, name = ""
                     hmap[hash(t)] = [t, 1]
             
             if do_drop:
-                t = tag['tag']
-                # t = tag['tag'].split('_')[0] if tag['tag'] in tag_list else tag['tag']
+                # t = tag['tag']
+                t = tag['tag'].split('_')[0] if tag['tag'] in tag_list else tag['tag']
                 exists = False
+                if t == 'AFA':
+                    print('afa is', end = " ")
                 for key, value in drop_tag_dict.items():
                     if t in value:
                         texts = texts.replace(tag['tag'], key)
                         tags[ti]['tag'] = key
                         exists = True
                         break
+                if t == 'AFA':
+                    print('true' if exists else 'false')
+                    print(tags)
                 if not exists:
                     to_replace = ""
                     # if no_drop_do_O: tags[ti]['tag'] = 'O'
                     texts = texts.replace("<{}>".format(tag['tag']), to_replace)
                     texts = texts.replace("</{}>".format(tag['tag']), to_replace)
                     to_del_tag.append(tag)
+                    # if tag['tag'] == 'CV_RELATION':
+                    #     print(to_del_tag)
+                    # print(tag)
                 else:
                     t = tag['tag']
                     try:
@@ -256,20 +264,24 @@ def find_overlap_token(dir : Path, do_concat = False, do_drop = False, name = ""
                     except:
                         hmap[hash(t)] = t
         if do_drop:
-            if len(tags) == len(to_del_tag) and not no_drop_do_O:
-                to_del.append(di)
-                continue
-            else:
+            # if len(tags) == len(to_del_tag) and not no_drop_do_O:
+            #     to_del.append(di)
+            #     # continue
+            # else:
+                # print(tags)
                 for tdt in to_del_tag:
+                    # if tdt['tag'] == 'CV_RELATION':
+                    #     print('why')
                     tags.remove(tdt)
+                # print(tags)
 
         df.loc[di, 'ner.text'] = texts
         df.loc[di, 'ner.tags'] = str(tags)
     print(hmap.values())
     if do_concat:
         df.to_csv("corpus/{}_{}.csv".format("new_corpus_no_overlap_concat", name),index=False)
-    # if do_drop:
-    #     df.to_csv("corpus/{}_{}.csv".format("new_corpus_no_overlap_no_drop", name),index=False)
+    if do_drop:
+        df.to_csv("corpus/{}_{}.csv".format("new_corpus_no_overlap_no_drop", name),index=False)
         # df_del = df.drop(to_del)
         # df_del.to_csv("new_corpus/{}_{}.csv".format("new_corpus_no_overlap_drop", name),index=False)
     """
@@ -643,8 +655,26 @@ if __name__ == "__main__":
     #         df.loc[i, 'ner.tags'] = str(new_tags)
     # df.to_csv("corpus/{}_no_special_221028.csv".format(dir.name), sep=',')
 
-    find_overlap_token(Path("corpus/new_corpus_no_overlap.csv_val_0.1.csv"), do_concat = True, name = 'val_data_3')
-    to_train_bert(Path("corpus/new_corpus_no_overlap_concat_val_data_3.csv"))
+    find_overlap_token(Path("corpus/new_corpus_no_overlap.csv_train_0.1.csv"), do_drop = True, drop_tag_dict = {
+    'PER' : ['PERSON', 'PS'],
+    'ORG' : ['OGG', 'ORG'],
+    'PRD' : ['AFW', 'PRODUCT'],
+    'WOA' : ['AFA', 'WORK_OF_ART']
+    }, name = 'train_data_4_1109')
+    find_overlap_token(Path("corpus/new_corpus_no_overlap.csv_val_0.1.csv"), do_drop = True, drop_tag_dict = {
+    'PER' : ['PERSON', 'PS'],
+    'ORG' : ['OGG', 'ORG'],
+    'PRD' : ['AFW', 'PRODUCT'],
+    'WOA' : ['AFA', 'WORK_OF_ART']
+    }, name = 'val_data_4_1109')
+    find_overlap_token(Path("corpus/new_corpus_no_overlap.csv_test_0.1.csv"), do_drop = True, drop_tag_dict = {
+    'PER' : ['PERSON', 'PS'],
+    'ORG' : ['OGG', 'ORG'],
+    'PRD' : ['AFW', 'PRODUCT'],
+    'WOA' : ['AFA', 'WORK_OF_ART']
+    }, name = 'test_data_4_1109')
+    to_train_bert(Path("corpus/new_corpus_no_overlap_no_drop_train_data_4.csv"), 'train')
+    to_train_bert(Path("corpus/new_corpus_no_overlap_no_drop_val_data_4.csv"), 'val')
             # print(df['ner.tags'][i])
         # df.loc[i, 'ko_original'] = re.sub(r"[^\uAC00-\uD7A3a-zA-Z0-9~,.?\s]", "", d).strip()
     # df['w/special'] = with_special
