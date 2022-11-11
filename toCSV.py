@@ -5,10 +5,389 @@ from pathlib import Path
 from tqdm import tqdm
 import pandas as pd
 import re
+import pprint
 
 """
 우리 장훈 씨 같은 남편을 어디서 만나요.,>우리 <PERSON>장훈</PERSON> 씨 같은 남편을 어디서 만나요.,"[{'tag': 'PERSON', 'value': '장훈', 'position': '[4, 6]'}]"
 """
+def write_csv_excel(json_dir):
+    ko_originals = []
+    nertexts = []
+    nertagses = []
+    hmap = {}
+    aj_sum = 0
+    aj_count = 0
+
+    texts = []
+    iii = 0
+    for j in tqdm(json_dir):
+        # print(j.name if '한일' in j.name or '한중' in j.name else "",end="\n")
+        if '한독' in j.name or '한스' in j.name or '한프' in j.name:
+        # {'tag': 'PERSON', 'value': '허경환', 'position': '[0, 3]'}
+            df = pd.read_excel(j)
+            for origin, cate, catesmall in zip(df['원문'], df['대분류'], df['중분류'] + "-" + df['소분류']):
+                if len(origin) < 10: continue
+                # print(origin, cate, catesmall)
+                # break
+        # break
+        # print(df)
+        # with open(j,'r', encoding='utf-8') as j_file:
+        #     j_dict = json.load(j_file)
+        #     for j_dict_doc in j_dict['document']:
+                # pub = j_dict_doc['metadata']['publisher']
+                pub = [cate, catesmall]
+        #         # print(pub)
+                # temp_utter = ''
+        #         for utterances in j_dict_doc['utterance']:
+        #             temp_utter += utterances['form'].strip() + ' '
+        #             if len(temp_utter) > 2 and temp_utter and temp_utter[-2] == '.':
+        #                 temp_utter = temp_utter[:-2]
+        #                 if len(temp_utter) >= 10:
+                texts.append(origin.strip())
+                aj_sum += len(origin.strip())
+                aj_count += 1
+                # if hmap.get(hash(pub)):
+                #     hmap[hash(pub)][pub] += 1
+                # else:
+                #     hmap[hash(pub)] = {pub : 1}
+                # iii += 1
+                try:
+                    check = True
+                    if hmap[hash(pub[0])]:
+                        check = False
+                        # hmap[hash(pub[0])][pub[1]] += 1
+                        hmap[hash(pub[0])][0][pub[0]] += 1
+                        hmap[hash(pub[0])][1][pub[1]] += 1
+                except:
+                    if check:
+                        hmap[hash(pub[0])] = [{pub[0] : 1}, {pub[1] : 1}]
+                    else:
+                        hmap[hash(pub[0])][1][pub[1]] = 1
+        #                 temp_utter = ''
+        #     iii += 1
+        # if iii >= 1: break
+    aj_average = aj_sum/aj_count
+    metadata = {'sentences' : aj_count, "sum_length": aj_sum, "average_length": aj_average, "domains" : list(hmap.values())}
+    dd = {'metadata' : metadata, 'scripts' : texts}
+    # print(texts[:10])
+    # print(hmap)
+    # pprint.pprint(metadata)
+    # df = pd.DataFrame(dd)
+    
+    with open("pretrain_corpus1108/028.다국어 구어체 번역 병렬 말뭉치 데이터_reproduced.json", "w", encoding='utf-8') as outfile:
+        json.dump(dd, outfile, indent=2, ensure_ascii=False)
+
+def gualho(text):
+    temp = ''
+    to_del = []
+    d_switch = 0
+    for i, t in enumerate(text):
+        if t in [")", "]", ">", "}"] and i < 10:
+            to_del.append(text[:i+1] if i+1 < len(text) else text)
+        if t in ["(", "[", "<", "{"]:
+            d_switch += 1
+        if d_switch:
+            temp += t
+        if t in [")", "]", ">", "}"] and d_switch:
+            d_switch -= 1
+            to_del.append(temp)
+            temp = ''
+        # print(t, d_switch)
+    for td in to_del:
+        # print(td)
+        text = text.replace(td, "")
+    # print(text)
+    return text.replace(')',"").replace(']',"").replace('>',"").replace('}',"").strip()
+    # return re.sub("[(해설)]", "", text)
+def no_overlap(corpus_dir = Path('pretrain_corpus1108')):
+    corpus_list = get_json_list(corpus_dir)
+    corpus_texts = []
+    metadata = {'sentences': 0,'deleted_overlap_sentences' : 0 , 'sum_length': 0, 'average_length': 0, 'domains' : []}
+    for corpus in tqdm(corpus_list):
+        with open(corpus, "r", encoding = 'utf-8') as f:
+            j = json.load(f)
+            print(corpus, len(j.get('scripts')))
+            corpus_texts += j.get('scripts')
+            jmeta = j.get('metadata')
+            metadata['sentences'] += jmeta['sentences']
+            metadata['sum_length'] += jmeta['sum_length']
+            metadata['domains'] += jmeta['domains']
+    metadata['average_length'] = metadata['sum_length'] / metadata['sentences']
+    print("before : ".format(len(corpus_texts)))
+    before = len(corpus_texts)
+    pprint.pprint(metadata)
+    to_del = []
+    hmap = {}
+    for i, d in tqdm(enumerate(corpus_texts)):
+        n = 0
+        while(True):
+            if hmap.get(hash(d)+n):
+                if hmap[hash(d)+n] != d:
+                    n += 1
+                    continue
+                else:
+                    to_del.append(i)
+                    break
+            else:
+                hmap[hash(d)+n] = d
+                break
+    print("{} sentences deleting".format(len(to_del)))
+    new_texts = []
+    ling = list(range(0, before))
+    n = 0
+    for i in tqdm(range(before)):
+        if n < len(to_del) and i == to_del[n]:
+            n += 1
+        else:
+            new_texts.append(corpus_texts[i])
+    # for i, td in tqdm(enumerate(to_del)):
+
+    #     del corpus_texts[td - i]
+    print("after : {}".format(len(new_texts)))
+    metadata['deleted overlap sentences'] = before - len(new_texts)
+    dd = {'metadata' : metadata, 'scripts' : new_texts}
+    with open("nersota_corpus_for_pretrain.json", "w", encoding='utf-8') as outfile:
+        json.dump(dd, outfile, indent=2, ensure_ascii=False)
+def write_csv_script(json_dir):
+    ko_originals = []
+    nertexts = []
+    nertagses = []
+    hmap = {}
+    aj_sum = 0
+    aj_count = 0
+
+    # print(gualho("화자1] 123(4(56(해설)7)89]10)11"))
+    # return 0
+    texts = []
+    iii = 0
+    for j in tqdm(json_dir):
+        # {'tag': 'PERSON', 'value': '허경환', 'position': '[0, 3]'}
+        with open(j,'r', encoding='utf-8') as j_file:
+            j_dict = json.load(j_file)
+            pub = j_dict['Meta'].get('doc_type')
+            # for j_dict_doc in j_dict['Meta']:
+                # pub = j_dict_doc['metadata']['publisher']
+                # pub = j_dict_doc['metadata'].get('topic')
+                # print(pub)
+                # temp_utter = ''
+            temp_count = 0
+            if len(j_dict['Meta']['passage'].split('\n')) > 1: iter_list = j_dict['Meta']['passage'].split('\n')
+            else: iter_list = j_dict['Meta']['passage'].split('. ')
+            for utterances in iter_list:
+                t_to_add = gualho(utterances)
+                if len(t_to_add) >= 10:
+                    texts.append(gualho(utterances))
+                    temp_count += 1
+                    aj_sum += len(t_to_add)
+                    # temp_utter += utterances['form'].strip() + ' '
+                    # if len(temp_utter) > 2 and temp_utter and temp_utter[-2] == '.':
+                    #     temp_utter = temp_utter[:-2]
+                    #     if len(temp_utter) >= 10:
+                    #         texts.append(temp_utter)
+                    #         aj_sum += len(temp_utter)
+                    #         aj_count += 1
+            if hmap.get(hash(pub)):
+                hmap[hash(pub)][pub] += temp_count
+            else:
+                hmap[hash(pub)] = {pub : temp_count}
+            aj_count += temp_count
+                        # try:
+                        #     check = True
+                        #     if hmap[hash(pub[0])]:
+                        #         check = False
+                        #         # hmap[hash(pub[0])][pub[1]] += 1
+                        #         hmap[hash(pub[0])][0][pub[0]] += 1
+                        #         hmap[hash(pub[0])][1][pub[1]] += 1
+                        # except:
+                        #     if check:
+                        #         hmap[hash(pub[0])] = [{pub[0] : 1}, {pub[1] : 1}]
+                        #     else:
+                        #         hmap[hash(pub[0])][1][pub[1]] = 1
+                        # temp_utter = ''
+        # iii += 1
+        # if iii == 3: break
+    aj_average = aj_sum/aj_count
+    metadata = {'sentences' : aj_count, "sum_length": aj_sum, "average_length": aj_average, "domains" : list(hmap.values())}
+    dd = {'metadata' : metadata, 'scripts' : texts}
+    # print(texts)
+    # print(hmap.values())
+    
+    with open("023.방송 콘텐츠 대본 요약 데이터_reproduced.json", "w", encoding='utf-8') as outfile:
+        json.dump(dd, outfile, indent=2, ensure_ascii=False)
+
+def write_csv_momal(json_dir):
+    ko_originals = []
+    nertexts = []
+    nertagses = []
+    hmap = {}
+    aj_sum = 0
+    aj_count = 0
+
+    texts = []
+    iii = 0
+    for j in tqdm(json_dir):
+        # {'tag': 'PERSON', 'value': '허경환', 'position': '[0, 3]'}
+        with open(j,'r', encoding='utf-8') as j_file:
+            j_dict = json.load(j_file)
+            pub = j_dict['metadata'].get('category')
+            for j_dict_doc in j_dict['document']:
+                # pub = j_dict_doc['metadata']['publisher']
+                # pub = j_dict_doc['metadata'].get('topic')
+                # print(pub)
+                temp_utter = ''
+                for utterances in j_dict_doc['utterance']:
+                    temp_utter += utterances['form'].strip() + ' '
+                    if len(temp_utter) > 2 and (temp_utter[-2] == '?' or temp_utter[-2] == '.'):
+                        temp_utter = temp_utter[:-1]
+                        if len(temp_utter) >= 10:
+                            texts.append(temp_utter)
+                            aj_sum += len(temp_utter)
+                            aj_count += 1
+                        if hmap.get(hash(pub)):
+                            hmap[hash(pub)][pub] += 1
+                        else:
+                            hmap[hash(pub)] = {pub : 1}
+                        # try:
+                        #     check = True
+                        #     if hmap[hash(pub[0])]:
+                        #         check = False
+                        #         # hmap[hash(pub[0])][pub[1]] += 1
+                        #         hmap[hash(pub[0])][0][pub[0]] += 1
+                        #         hmap[hash(pub[0])][1][pub[1]] += 1
+                        # except:
+                        #     if check:
+                        #         hmap[hash(pub[0])] = [{pub[0] : 1}, {pub[1] : 1}]
+                        #     else:
+                        #         hmap[hash(pub[0])][1][pub[1]] = 1
+                        temp_utter = ''
+                if temp_utter != '':
+                    if len(temp_utter) >= 10:
+                            texts.append(temp_utter)
+                            aj_sum += len(temp_utter)
+                            aj_count += 1
+                    if hmap.get(hash(pub)):
+                        hmap[hash(pub)][pub] += 1
+                    else:
+                        hmap[hash(pub)] = {pub : 1}
+                    
+        # iii += 1
+        # if iii == 1: break
+    aj_average = aj_sum/aj_count
+    metadata = {'sentences' : aj_count, "sum_length": aj_sum, "average_length": aj_average, "domains" : list(hmap.values())}
+    dd = {'metadata' : metadata, 'scripts' : texts}
+    # print(texts)
+    pprint.pprint(metadata)
+    # df = pd.DataFrame(dd)
+    
+    with open("국립국어원 일상 대화 말뭉치 2020(버전 1.2)_reproduced.json", "w", encoding='utf-8') as outfile:
+        json.dump(dd, outfile, indent=2, ensure_ascii=False)
+    # df.to_json("일상 대화 말뭉치 2020_reproduced.json", index=False)
+                # for j_dict_doc_sen in j_dict_doc['sentence']:
+                    
+    #                 NEs = []
+    #                 ko_original = ''
+    #                 nertext = ''
+    #                 nertags = []
+    #                 ko_original = j_dict_doc_sen['form']
+    #                 nertext = ko_original
+    #                 NEs = j_dict_doc_sen['NE']
+    #                 n = 0
+    #                 for ne in NEs:
+    #                     nertext = nertext[:ne['begin']+n] + "<{}>".format(ne['label']) +  nertext[ne['begin']+n:ne['end']+n] + "</{}>".format(ne['label']) + nertext[ne['end']+n:]
+    #                     n += (len(ne['label'])*2 + len("<></>"))
+    #                     nertags.append({'tag' : ne['label'], 'value' : ne['form'], 'position' : [ne['begin'], ne['end']]})
+    #                 if len(nertags) > 0 :
+    #                     ko_originals.append(ko_original)
+    #                     nertagses.append(nertags)
+    #                     nertexts.append(nertext)
+    #                 aj_sum += len(re.sub(r"[^\uAC00-\uD7A3a-zA-Z0-9]", "", ko_original))
+    #                 aj_count += 1
+    # # print(aj_sum/aj_count)
+    # df = pd.read_csv("AIHub_new_ner_corpus - 복사본.csv", sep = ',')
+    # ndf = pd.DataFrame(ko_originals, columns=['ko_original'])
+    # ndf['ner.text'] = nertexts
+    # ndf['ner.tags'] = nertagses
+    # udf = df.append(ndf)
+    # print(udf)
+    # # udf.to_csv("new_corpus/{}3.csv".format("new_corpus"),index=False)
+    # print(hmap.values())
+    return 0
+
+def write_csv_aihub(json_dir):
+    ko_originals = []
+    nertexts = []
+    nertagses = []
+    hmap = {}
+    ner_count = 0
+    sentence_count = 0
+    aj_sum = 0
+    aj_count = 0
+    for j in tqdm(json_dir):
+        # {'tag': 'PERSON', 'value': '허경환', 'position': '[0, 3]'}
+        with open(j,'r', encoding='utf-8') as j_file:
+            j_dict = json.load(j_file)
+            for j_dict_doc in j_dict['data']:
+                pub = j_dict_doc['domain']
+                ko = j_dict_doc['ko']
+                n = 0
+                conti = False
+                while(True):
+                    if hmap.get(hash(ko)+n):
+                        if hmap[hash(ko)+n] == ko:
+                            conti = True
+                            break
+                        else:
+                            n += 1
+                            continue
+                    else:
+                        hmap[hash(ko)+n] = ko
+                        break
+                if conti: continue
+                # try:
+                #     if hmap[hash(pub)][0] == pub:
+                #         hmap[hash(pub)][1] += len(j_dict_doc['ko'])
+                # except:
+                #     hmap[hash(pub)] = [pub, len(j_dict_doc['ko'])]
+                ko_originals.append(j_dict_doc['ko'])
+                if j_dict_doc['ner']:
+                    ner_count += 1
+                sentence_count += 1
+                # for j_dict_doc_sen in j_dict_doc['ko']:
+                    
+                #     NEs = []
+                #     ko_original = ''
+                #     nertext = ''
+                #     nertags = []
+                #     ko_original = j_dict_doc_sen['form']
+                #     nertext = ko_original
+                #     NEs = j_dict_doc_sen['NE']
+                #     n = 0
+                #     for ne in NEs:
+                #         nertext = nertext[:ne['begin']+n] + "<{}>".format(ne['label']) +  nertext[ne['begin']+n:ne['end']+n] + "</{}>".format(ne['label']) + nertext[ne['end']+n:]
+                #         n += (len(ne['label'])*2 + len("<></>"))
+                #         nertags.append({'tag' : ne['label'], 'value' : ne['form'], 'position' : [ne['begin'], ne['end']]})
+                #     if len(nertags) > 0 :
+                #         ko_originals.append(ko_original)
+                #         nertagses.append(nertags)
+                #         nertexts.append(nertext)
+                #     aj_sum += len(re.sub(r"[^\uAC00-\uD7A3a-zA-Z0-9]", "", ko_original))
+                #     aj_count += 1
+        # break
+    # print(aj_sum/aj_count)
+    print(sentence_count)
+    print(ner_count)
+    
+    with open("aihub_dataset_for_finetuning_reproduced.json", "w", encoding='utf-8') as outfile:
+        json.dump(ko_originals, outfile, indent=2, ensure_ascii=False)
+    # df = pd.read_csv("AIHub_new_ner_corpus - 복사본.csv", sep = ',')
+    # ndf = pd.DataFrame(ko_originals, columns=['ko_original'])
+    # ndf['ner.text'] = nertexts
+    # ndf['ner.tags'] = nertagses
+    # udf = df.append(ndf)
+    # print(udf)
+    # # udf.to_csv("new_corpus/{}3.csv".format("new_corpus"),index=False)
+    # print(hmap.values())
+    return 0
 
 def write_csv(json_dir):
     ko_originals = []
@@ -17,11 +396,11 @@ def write_csv(json_dir):
     hmap = {}
     aj_sum = 0
     aj_count = 0
+    ner_count = 0
     for j in tqdm(json_dir):
         # {'tag': 'PERSON', 'value': '허경환', 'position': '[0, 3]'}
         with open(j,'r', encoding='utf-8') as j_file:
             j_dict = json.load(j_file)
-            
             for j_dict_doc in j_dict['document']:
                 pub = j_dict_doc['metadata']['publisher']
                 try:
@@ -40,24 +419,29 @@ def write_csv(json_dir):
                     nertext = ko_original
                     NEs = j_dict_doc_sen['NE']
                     n = 0
+                    nn = ner_count
                     for ne in NEs:
                         nertext = nertext[:ne['begin']+n] + "<{}>".format(ne['label']) +  nertext[ne['begin']+n:ne['end']+n] + "</{}>".format(ne['label']) + nertext[ne['end']+n:]
                         n += (len(ne['label'])*2 + len("<></>"))
                         nertags.append({'tag' : ne['label'], 'value' : ne['form'], 'position' : [ne['begin'], ne['end']]})
+                        ner_count = nn + 1
                     if len(nertags) > 0 :
                         ko_originals.append(ko_original)
                         nertagses.append(nertags)
                         nertexts.append(nertext)
-                    aj_sum += len(re.sub(r"[^\uAC00-\uD7A3a-zA-Z0-9]", "", ko_original))
+                    # aj_sum += len(re.sub(r"[^\uAC00-\uD7A3a-zA-Z0-9]", "", ko_original))
                     aj_count += 1
-    print(aj_sum/aj_count)
-    df = pd.read_csv("AIHub_new_ner_corpus - 복사본.csv", sep = ',')
-    ndf = pd.DataFrame(ko_originals, columns=['ko_original'])
-    ndf['ner.text'] = nertexts
-    ndf['ner.tags'] = nertagses
-    udf = df.append(ndf)
-    # udf.to_csv("new_corpus/{}3.csv".format("new_corpus"),index=False)
-    print(hmap.values())
+        # break
+    # print(ko_originals)
+    # print(nertagses)
+    # print(nertexts)
+    print(aj_count)
+    print(ner_count)
+    dd = {"ko_originals" : ko_originals, 'nertags' : nertagses, 'nertext' : nertexts}
+    with open("momal_dataset_for_finetuning_reproduced.json", "w", encoding='utf-8') as outfile:
+        json.dump(dd, outfile, indent=2, ensure_ascii=False)
+    # # udf.to_csv("new_corpus/{}3.csv".format("new_corpus"),index=False)
+    # print(hmap.values())
     return 0
 def to_train_bert(corpus_dir : Path, mode : str):
     df = pd.read_csv(corpus_dir, sep=',')
@@ -117,18 +501,15 @@ def to_train_bert(corpus_dir : Path, mode : str):
     return 0
 def get_json_list(corpus_dir : Path):
     json_dir = []
-    for sub_dir in os.scandir(corpus_dir):
-        for susub_dir in os.scandir(Path(sub_dir)):
-            if susub_dir.name[0] == 'S':
-                if susub_dir.name[-4:] == 'json':
-                    json_dir.append(Path(susub_dir))
-                else:
-                    json_dir = dir_serach(susub_dir, json_dir)
+    json_dir = dir_serach(corpus_dir, json_dir)
     return json_dir
 
 def dir_serach(dir : Path, json_dir : list):
     for sub_dir in os.scandir(dir):
-        json_dir.append(Path(sub_dir))
+        if sub_dir.is_file() and sub_dir.name[-3:] not in ['zip', 'pdf']:
+            json_dir.append(Path(sub_dir))
+        if sub_dir.is_dir():
+            json_dir += dir_serach(sub_dir, [])
     return json_dir
 
 def find_overlap(dir : Path):
@@ -508,13 +889,47 @@ def train_validation_split(dir = Path("new_corpus/new_corpus_no_overlap.csv"), p
     val_df.to_csv("new_corpus/{}_val_{}.csv".format(dir.name, portion),index=False)
 
 if __name__ == "__main__":
-    # corpus_dir = "corpus/NIKL_EL_2021_v1.1/국립국어원 개체명 분석 말뭉치 개체 연결 2021(버전 1.1)"
+    # no_overlap()
+    # corpus_dir = "corpus/157.방송 콘텐츠 한-중, 한-일 번역 병렬 말뭉치 데이터"
+    # corpus_dir = 'corpus/NIKL_SPOKEN_v1.2/국립국어원 구어 말뭉치(버전 1.2)'
+    # corpus_dir = 'corpus/023.방송 콘텐츠 대본 요약 데이터'
+    # corpus_dir = 'corpus/028.다국어 구어체 번역 병렬 말뭉치 데이터'
     # corpus_dir = Path(corpus_dir)
     # json_dir = get_json_list(corpus_dir)
+    # print(json_dir)
+    # corpus_dir = "corpus/025.일상생활 및 구어체 한-영 번역 병렬 말뭉치 데이터"
+    # corpus_dir = "corpus/NIKL_EL_2021_v1.1"
+    # corpus_dir = Path(corpus_dir)
+    # json_dir = get_json_list(corpus_dir)
+    # Sjson_dir = []
+    # for j in json_dir:
+    #     if j.name[0] == 'S':
+    #         print(j.name)
+    #         Sjson_dir.append(j)
+    # print(Sjson_dir)
+    # # write_csv_script(json_dir)
+    # # write_csv_momal(json_dir)
+    # # write_csv_excel(json_dir)
     # # with open("AIHub_new_ner_corpus_221022.json",'w', encoding='utf-8') as file:
-    # write_csv(json_dir)
+    # # write_csv_aihub(json_dir)
+    # write_csv(Sjson_dir)
 
-    # find_overlap_token(Path("new_corpus/{}.csv".format("new_corpus_no_overlap")), do_concat=True, name = 'v2')
+    find_overlap_token(Path("new_corpus/{}.csv".format("new_corpus_no_overlap.csv_test_0.1")), do_drop=True, name = '1110',no_drop_do_O= True , drop_tag_dict = {
+     'PER' : ['PERSON', 'PS'],
+     'FLD' : ['FD', 'STUDY_FIELD', 'STF'],
+     'AFW' : ['AF', 'AFA', 'WORK_OF_ART', 'AFW', 'PRODUCT', 'ARTIFACTS', 'ARF'],
+     'ORG' : ['OGG', 'ORG', 'ORGANIZATION'],
+     'LOC' : ['LC','LCG', 'LCP', 'LOCATION'],
+     'CVL' : ['CV', 'CIVILIZATION'],
+     'DAT' : ['DT', 'DATE'],
+     'TIM' : ['TI', 'TIME'],
+     'NUM' : ['QT', 'QUANTITY', 'QTT'],
+     'EVT' : ['EV', 'EVENT'],
+     'ANM' : ['AM', 'ANIMAL'],
+     'PLT' : ['PT', 'PLANT'],
+     'MAT' : ['MT', 'MATERIAL'],
+     'TRM' : ['TM','TMI', 'TMIG', 'TMM', 'TERM']
+    })
     # find_overlap_token(Path("corpus/new_corpus_no_overlap.csv_test_0.1.csv_no_special_221028.csv"), do_drop=True, name = "letr", drop_tag_dict = {
     # 'PERSON' : ['PERSON', 'PS_NAME', 'PS_CHARACTER', 'PS_PET'],
     # 'NORP' : ['OGG_RELIGION', 'OGG_POLITICS'],
@@ -655,26 +1070,8 @@ if __name__ == "__main__":
     #         df.loc[i, 'ner.tags'] = str(new_tags)
     # df.to_csv("corpus/{}_no_special_221028.csv".format(dir.name), sep=',')
 
-    find_overlap_token(Path("corpus/new_corpus_no_overlap.csv_train_0.1.csv"), do_drop = True, drop_tag_dict = {
-    'PER' : ['PERSON', 'PS'],
-    'ORG' : ['OGG', 'ORG'],
-    'PRD' : ['AFW', 'PRODUCT'],
-    'WOA' : ['AFA', 'WORK_OF_ART']
-    }, name = 'train_data_4_1109')
-    find_overlap_token(Path("corpus/new_corpus_no_overlap.csv_val_0.1.csv"), do_drop = True, drop_tag_dict = {
-    'PER' : ['PERSON', 'PS'],
-    'ORG' : ['OGG', 'ORG'],
-    'PRD' : ['AFW', 'PRODUCT'],
-    'WOA' : ['AFA', 'WORK_OF_ART']
-    }, name = 'val_data_4_1109')
-    find_overlap_token(Path("corpus/new_corpus_no_overlap.csv_test_0.1.csv"), do_drop = True, drop_tag_dict = {
-    'PER' : ['PERSON', 'PS'],
-    'ORG' : ['OGG', 'ORG'],
-    'PRD' : ['AFW', 'PRODUCT'],
-    'WOA' : ['AFA', 'WORK_OF_ART']
-    }, name = 'test_data_4_1109')
-    to_train_bert(Path("corpus/new_corpus_no_overlap_no_drop_train_data_4.csv"), 'train')
-    to_train_bert(Path("corpus/new_corpus_no_overlap_no_drop_val_data_4.csv"), 'val')
+    find_overlap_token(Path("corpus/new_corpus_no_overlap.csv_val_0.1.csv"), do_concat = True, name = 'val_data_3')
+    to_train_bert(Path("corpus/new_corpus_no_overlap_concat_val_data_3.csv"))
             # print(df['ner.tags'][i])
         # df.loc[i, 'ko_original'] = re.sub(r"[^\uAC00-\uD7A3a-zA-Z0-9~,.?\s]", "", d).strip()
     # df['w/special'] = with_special
