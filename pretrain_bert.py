@@ -65,8 +65,9 @@ scripts = dict['scripts']
 from transformers import BertTokenizer, BertForMaskedLM
 import torch
 # tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+tokenizer_name = "beomi/kcbert-base"
 tokenizer = BertTokenizer.from_pretrained(
-    "beomi/kcbert-base",
+    tokenizer_name,
     do_lower_case=False,
 )
 config = BertConfig(hidden_size = 768,
@@ -192,7 +193,8 @@ eval_dataset = torch.utils.data.ConcatDataset(eval_datasets)
 # # for itern in range(1,101):
 # #     itern
 # #     eval_dataset = get_dataset(eval_dict)
-torch.save(eval_dataset, "eval_dataset.pt")
+# torch.save(eval_dataset, "eval_dataset_{}.pt".format(tokenizer_name))
+torch.save(eval_dataset, "train_dataset_{}.pt".format(tokenizer_name))
 
 """
     load 테스트
