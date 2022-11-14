@@ -494,7 +494,7 @@ def to_train_bert(corpus_dir : Path, mode : str):
             new_line = input()
         lines.append("{}␞{}".format(ko, new_line))
         # if i == 50: break
-    with open('{}.txt'.format(mode), 'w', encoding='utf-8') as file:
+    with open('train_1028/ner/val.txt', 'w', encoding='utf-8') as file:
         for i, line in tqdm(enumerate(lines)):
             file.write(line + "\n" if i < len(lines)-1 else line)
     print('done')
@@ -592,13 +592,13 @@ def find_overlap_token(dir : Path, do_concat = False, do_drop = False, name = ""
     to_del = []
     hmap = {}
     for di, d in tqdm(enumerate(df['ner.tags'])):
-        # print("{} / {} - {}%".format(di, len(df['ner.tags']), di/len(df['ner.tags'])*100))
+        print("{} / {} - {}%".format(di, len(df['ner.tags']), di/len(df['ner.tags'])*100))
         tags = (eval(d))
         texts = df['ner.text'][di]
         to_del_tag = []
         for ti, tag in enumerate(tags):
             if do_concat:
-                t = tag['tag'].split('_')[0] #if tag['tag'] in tag_list else tag['tag']
+                t = tag['tag'].split('_')[0] if tag['tag'] in tag_list else tag['tag']
                 for key, value in concat_tag_dict.items():
                     if t in value:
                         texts = texts.replace(tag['tag'], key)
@@ -617,26 +617,18 @@ def find_overlap_token(dir : Path, do_concat = False, do_drop = False, name = ""
                 # t = tag['tag']
                 t = tag['tag'].split('_')[0] if tag['tag'] in tag_list else tag['tag']
                 exists = False
-                if t == 'AFA':
-                    print('afa is', end = " ")
                 for key, value in drop_tag_dict.items():
                     if t in value:
                         texts = texts.replace(tag['tag'], key)
                         tags[ti]['tag'] = key
                         exists = True
                         break
-                if t == 'AFA':
-                    print('true' if exists else 'false')
-                    print(tags)
                 if not exists:
                     to_replace = ""
                     # if no_drop_do_O: tags[ti]['tag'] = 'O'
                     texts = texts.replace("<{}>".format(tag['tag']), to_replace)
                     texts = texts.replace("</{}>".format(tag['tag']), to_replace)
                     to_del_tag.append(tag)
-                    # if tag['tag'] == 'CV_RELATION':
-                    #     print(to_del_tag)
-                    # print(tag)
                 else:
                     t = tag['tag']
                     try:
@@ -645,16 +637,12 @@ def find_overlap_token(dir : Path, do_concat = False, do_drop = False, name = ""
                     except:
                         hmap[hash(t)] = t
         if do_drop:
-            # if len(tags) == len(to_del_tag) and not no_drop_do_O:
-            #     to_del.append(di)
-            #     # continue
-            # else:
-                # print(tags)
+            if len(tags) == len(to_del_tag) and not no_drop_do_O:
+                to_del.append(di)
+                continue
+            else:
                 for tdt in to_del_tag:
-                    # if tdt['tag'] == 'CV_RELATION':
-                    #     print('why')
                     tags.remove(tdt)
-                # print(tags)
 
         df.loc[di, 'ner.text'] = texts
         df.loc[di, 'ner.tags'] = str(tags)
@@ -867,44 +855,86 @@ def find_overlap_token_letr(dir : Path, concat_tag_dict, drop_tag_dict, do_conca
         df.to_csv("corpus/{}_{}.csv".format("output_test_letr_API", name),index=False)
         # df_del = df.drop(to_del)
         # df_del.to_csv("new_corpus/{}_{}.csv".format("new_corpus_no_overlap_drop", name),index=False)
-def train_validation_split(dir = Path("new_corpus/new_corpus_no_overlap.csv"), portion = 0.1):
+def train_validation_split(dir = Path("new_corpus/new_corpus_no_overlap.csv"), portion = 0.01):
     import random
     random.seed(portion)
-    df = pd.read_csv(dir, sep=',')
-    train = list(range(len(df)))
+    # df = pd.read_csv(dir, sep=',')
+    # train = list(range(len(df)))
 
-    test = random.sample(train, int(len(df)*portion))
-    for i in test: train.remove(i)
+    with open(dir, 'r', encoding='utf-8') as j_file:
+        dict = json.load(j_file)
+        dict = dict['scripts']
+    print(dict[:3])
+    random.shuffle(dict)
+    print('shuffled')
+    print(dict[:3])
+    test = dict[:int(len(dict)*portion)]
+    val = dict[int(len(dict)*portion):int(len(dict)*portion)*2]
+    train = dict[int(len(dict)*portion)*2:]
+    with open("{}_test_{}".format(dir.name, portion), "w", encoding='utf-8') as outfile:
+        json.dump(test, outfile, indent=2, ensure_ascii=False)
+    with open("{}_eval_{}".format(dir.name, portion), "w", encoding='utf-8') as outfile:
+        json.dump(val, outfile, indent=2, ensure_ascii=False)
+    with open("{}_train_{}".format(dir.name, portion), "w", encoding='utf-8') as outfile:
+        json.dump(train, outfile, indent=2, ensure_ascii=False)
+    # test = random.sample(train, int(len(df)*portion))
+    # for i in test: train.remove(i)
 
-    val = random.sample(train, int(len(df)*portion))
-    for i in val: train.remove(i)
+    # val = random.sample(train, int(len(df)*portion))
+    # for i in val: train.remove(i)
 
-    print("test : {}\nvalidation : {}\ntrain : {}".format(len(test), len(val), len(train)))
+    # print("test : {}\nvalidation : {}\ntrain : {}".format(len(test), len(val), len(train)))
 
-    test_df = pd.DataFrame([df.loc[i] for i in test])
-    train_df = pd.DataFrame([df.loc[i] for i in train])
-    val_df = pd.DataFrame([df.loc[i] for i in val])
-    test_df.to_csv("new_corpus/{}_test_{}.csv".format(dir.name, portion),index=False)
-    train_df.to_csv("new_corpus/{}_train_{}.csv".format(dir.name, portion),index=False)
-    val_df.to_csv("new_corpus/{}_val_{}.csv".format(dir.name, portion),index=False)
+    # test_df = pd.DataFrame([df.loc[i] for i in test])
+    # train_df = pd.DataFrame([df.loc[i] for i in train])
+    # val_df = pd.DataFrame([df.loc[i] for i in val])
+    # test_df.to_csv("new_corpus/{}_test_{}.csv".format(dir.name, portion),index=False)
+    # train_df.to_csv("new_corpus/{}_train_{}.csv".format(dir.name, portion),index=False)
+    # val_df.to_csv("new_corpus/{}_val_{}.csv".format(dir.name, portion),index=False)
 
 if __name__ == "__main__":
-    with open("nersota_corpus_for_pretrain.json",'r', encoding='utf-8') as j_file:
+    # train_validation_split('nersota_corpus_for_pretrain.json')
+    # # return 0
+    # with open("new_corpus/{}_no_special_221114.json",'r', encoding='utf-8') as j_file:
+    #     j_dict = json.load(j_file)
+    #     f = j_dict['ko_original']
+    with open("nersota_corpus_for_pretrain_no_special_2211141633.json",'r', encoding='utf-8') as j_file:
         j_dict = json.load(j_file)
-        j_dict = j_dict['scripts']
+        p = j_dict
+    # hmap = {}
+    # for fk in tqdm(f):
+    #     if hmap.get(hash(fk.strip())):
+    #         if hmap.get(hash(fk.strip())) == fk.strip():
+    #             print("중복! - ",fk)
+    #         else:
+    #             print("??", end =" ")
+    #             print(hmap.get(hash(fk.strip())))
+    #     else:
+    #         hmap[hash(fk.strip())] = fk.strip()
+    # print("검사중...")
+    # for pk in tqdm(p):
+    #     if hmap.get(hash(pk.strip())) == pk.strip():
+    #         print("중복! - ", pk)
+
     m_len = 0
-    n_len = len(j_dict[0])
+    n_len = len(p[0])
     oc = 0
-    for j in tqdm(j_dict):
+    new_p = []
+    n = 0
+    for j in tqdm(p):
         if m_len < len(j):
             m_len = len(j)
         if n_len > len(j):
             n_len = len(j)
-        if len(j) > 512:
+        if len(j) < 512:
+            new_p.append(j)
+        else:
             oc += 1
     print(m_len)
     print(n_len)
     print(oc)
+    with open("nersota_corpus_for_pretrain_no_special_len_under512_2211141659.json", "w", encoding='utf-8') as outfile:
+        json.dump(new_p, outfile, indent=2, ensure_ascii=False)
     # no_overlap()
     # corpus_dir = "corpus/157.방송 콘텐츠 한-중, 한-일 번역 병렬 말뭉치 데이터"
     # corpus_dir = 'corpus/NIKL_SPOKEN_v1.2/국립국어원 구어 말뭉치(버전 1.2)'
@@ -1010,26 +1040,32 @@ if __name__ == "__main__":
     #             hmap[hash(t)] = [t, 1]
     # print(hmap.values())
     
-    # 괄호 제거
-    # dir = Path("corpus/new_corpus_no_overlap.csv_train_0.1.csv")
-    # df = pd.read_csv(dir, sep = ',')
-    # for i, d in enumerate(df['ko_original']):
+    # with open("nersota_corpus_for_pretrain.json",'r', encoding='utf-8') as j_file:
+    #     j_dict = json.load(j_file)
+    #     df = j_dict['scripts']
+    #     ndf = j_dict['scripts']
+
+    # for i, d in enumerate(df):
     #     ko = d
-    #     new_tags = eval(str(df['ner.tags'][i]))
-    #     if ko[0] == "> " or ko[0] == " >":
-    #         for j, tags in enumerate(eval(str(df['ner.tags'][i]))):
-    #             new_tags[j]['position'] = [i-2 for i in eval(str(tags['position']))]
-    #             print(tags)
-    #             print(new_tags)
+    #     # new_tags = eval(str(df['ner.tags'][i]))
+    #     while(True):
+    #         if ko[0] == "\"" and ko[-1] == "\"":
+    #             print(ko, i)
+    #             ko = ko[1:-1]
+    #             print(ko, i)
+    #         elif ko[0] != "\"" and ko[-1] == "\"" and ko.count("\"")%2 > 0:
+    #             print(ko, i)
+    #             ko = ko[:-1]
+    #             print(ko, i)
+    #         else: break
+
+    #     if ko[0] in ["> ", " >", "＞ "]: #, "\" ", "\">"
+    #             # print(tags)
+    #             # print(new_tags)
     #         ko = ko[2:]
-    #     if ko[0] == ">":
-    #         for j, tags in enumerate(eval(str(df['ner.tags'][i]))):
-    #             new_tags[j]['position'] = [i-1 for i in eval(str(tags['position']))]
+    #     if ko[0] in [">", " ", "＞"]:
     #         ko = ko[1:]
-    #     if ko[0] == " ":
-    #         for j, tags in enumerate(eval(str(df['ner.tags'][i]))):
-    #             new_tags[j]['position'] = [i-1 for i in eval(str(tags['position']))]
-    #         ko = ko[1:]
+
     #     gh = []
     #     double_gh_n = 0 #괄호가 두 개 이상 있을 경우 인덱스 감소
     #     for k, letter in enumerate(ko): #괄호 제거
@@ -1038,36 +1074,153 @@ if __name__ == "__main__":
     #         if letter == ')':
     #             gh.append(k-double_gh_n)
     #             if len(gh) == 1: # )하나
-    #                 print("-------------------------------")
-    #                 print(ko)
+    #                 # print("-------------------------------")
+    #                 # print(ko)
+    #                 # for l, t in enumerate(new_tags):
+    #                 #     # print(t['position'])
+    #                 #     new_tags[l]['position'] = [int(li)-1 if int(li) > gh[0] else int(li) for li in eval(str(t['position']))]
+    #                 ko = ko[:gh[0]] + ko[gh[0]+1:]
+    #                 gh = []
+    #                 # print("-------------------------------")
+    #             # if len(gh) == 2:
+    #             #     # print(ko[gh[0]+1:gh[1]])
+    #             #     cut = True
+    #             #     for tag in new_tags:
+    #             #         # if ko[gh[0]+1:gh[1]] in tag['value']:
+    #             #             # print('in-----')
+    #             #             # print(ko[gh[0]+1:gh[1]], tag['value'])
+    #             #             # print(tag)
+    #             #             cut = False
+    #             #             # if tag['tag'] == 'PERSON' or tag['tag'][:3] == 'PS_':
+    #             #     if cut:
+    #             #         # print('not in-----')
+    #             #         # print(ko[gh[0]+1:gh[1]])
+    #             #         # print(ko)
+    #             #         ko = ko.replace(ko[gh[0]:gh[1]+1], "")
+    #             #         # print(new_tags)
+    #             #         for l, t in enumerate(new_tags):
+    #             #             # print(t['position'])
+    #             #             new_tags[l]['position'] = [int(li)-len(ko[gh[0]:gh[1]+1]) if int(li) > gh[1] else int(li) for li in eval(str(t['position'])) ]
+    #             #             # print(len(ko[gh[0]:gh[1]+1]))
+    #             #         # print(ko)
+    #             #         # print(new_tags)
+    #             #         double_gh_n += len(ko[gh[0]:gh[1]+1])
+    #             #     gh = []
+    #     if len(gh) == 1: # )하나
+    #         # for l, t in enumerate(new_tags):
+    #         #     # print(t['position'])
+    #         #     new_tags[l]['position'] = [int(li)-1 if int(li) > gh[0] else int(li) for li in eval(str(t['position']))]
+    #         ko = ko[:gh[0]] + ko[gh[0]+1:]
+    #         gh = []
+    #     ndf[i] = ko
+    #     # df.loc[i, 'ner.tags'] = str(new_tags)
+    #     # if ko[0] == " ":
+    #         # for j, tags in enumerate(eval(str(df['ner.tags'][i]))):
+    #         #     new_tags[j]['position'] = [i-1 for i in eval(str(eval(str(df['ner.tags'][i]))[j]['position']))]
+    #         # ko = ko[1:]
+    #         # df.loc[i, 'ko_original'] = ko
+    #         # df.loc[i, 'ner.tags'] = str(new_tags)
+    # # df.to_csv("new_corpus/{}_no_special_221114.csv".format(dir.name), sep=',')
+    # # dictdf = df.to_dict()
+    # # new_dictdf = dictdf['ner.tags']
+    # # for i, dic in enumerate(dictdf['ner.tags'].values()):
+    # #     # if dic == 
+    # #     ndi = []
+    # #     for di in eval(str(dic)):
+    # #         d = eval(str(di))
+    # #         d['position'] = eval(str(d['position']))
+    # #         ndi.append(d)
+    # #     dictdf['ner.tags']
+    # #     new_dictdf[i] = ndi
+    # # dictdf['ner.tags'] = new_dictdf
+    # with open("nersota_corpus_for_pretrain_no_special_221114.json", "w", encoding='utf-8') as outfile:
+    #     json.dump(ndf, outfile, indent=2, ensure_ascii=False)
+
+
+
+
+
+    # # 괄호 제거
+    # dir = Path("new_corpus/new_corpus_no_overlap.csv")
+    # df = pd.read_csv(dir, sep = ',')
+    # # print(df)
+    # # df.drop(columns=['Unnamed: 0.1','Unnamed: 0'])
+    # df = df[['ko_original', 'ner.text', 'ner.tags']]
+
+    # # with open("nersota_corpus_for_pretrain.json",'r', encoding='utf-8') as j_file:
+    # #     j_dict = json.load(j_file)
+    # #     df = j_dict['scripts']
+
+    # for i, d in enumerate(df['ko_original']):
+    #     if i== 7:
+    #         print(ko)
+    #         print(ko[0])
+    #     ko = d
+    #     new_tags = eval(str(df['ner.tags'][i]))
+    #     while(True):
+    #         if ko[0] == "\"" and ko[-1] == "\"":
+    #             print(ko, i)
+    #             ko = ko[1:-1]
+    #             print(ko, i)
+    #             for j, tags in enumerate(eval(str(df['ner.tags'][i]))):
+    #                 new_tags[j]['position'] = [i-1 if i-1 >= 0 else 0 for i in eval(str(tags['position']))]
+    #         elif ko[0] != "\"" and ko[-1] == "\"" and ko.count("\"")%2 > 0:
+    #             print(ko, i)
+    #             ko = ko[:-1]
+    #             print(ko, i)
+    #             for j, tags in enumerate(eval(str(df['ner.tags'][i]))):
+    #                 new_tags[j]['position'] = [i-1 if i >= len(ko) else i for i in eval(str(tags['position']))]
+    #         else: break
+
+    #     if ko[0] in ["> ", " >", "＞ "]: #, "\" ", "\">"
+    #         for j, tags in enumerate(eval(str(df['ner.tags'][i]))):
+    #             new_tags[j]['position'] = [i-2 for i in eval(str(tags['position']))]
+    #             # print(tags)
+    #             # print(new_tags)
+    #         ko = ko[2:]
+    #     if ko[0] in [">", " ", "＞"]:
+    #         for j, tags in enumerate(eval(str(df['ner.tags'][i]))):
+    #             new_tags[j]['position'] = [i-1 for i in eval(str(tags['position']))]
+    #         ko = ko[1:]
+
+    #     gh = []
+    #     double_gh_n = 0 #괄호가 두 개 이상 있을 경우 인덱스 감소
+    #     for k, letter in enumerate(ko): #괄호 제거
+    #         if letter == '(':
+    #             gh.append(k-double_gh_n)
+    #         if letter == ')':
+    #             gh.append(k-double_gh_n)
+    #             if len(gh) == 1: # )하나
+    #                 # print("-------------------------------")
+    #                 # print(ko)
     #                 for l, t in enumerate(new_tags):
     #                     # print(t['position'])
     #                     new_tags[l]['position'] = [int(li)-1 if int(li) > gh[0] else int(li) for li in eval(str(t['position']))]
     #                 ko = ko[:gh[0]] + ko[gh[0]+1:]
     #                 gh = []
-    #                 print("-------------------------------")
+    #                 # print("-------------------------------")
     #             if len(gh) == 2:
     #                 # print(ko[gh[0]+1:gh[1]])
     #                 cut = True
     #                 for tag in new_tags:
     #                     if ko[gh[0]+1:gh[1]] in tag['value']:
-    #                         print('in-----')
-    #                         print(ko[gh[0]+1:gh[1]], tag['value'])
-    #                         print(tag)
+    #                         # print('in-----')
+    #                         # print(ko[gh[0]+1:gh[1]], tag['value'])
+    #                         # print(tag)
     #                         cut = False
     #                         # if tag['tag'] == 'PERSON' or tag['tag'][:3] == 'PS_':
     #                 if cut:
-    #                     print('not in-----')
-    #                     print(ko[gh[0]+1:gh[1]])
-    #                     print(ko)
+    #                     # print('not in-----')
+    #                     # print(ko[gh[0]+1:gh[1]])
+    #                     # print(ko)
     #                     ko = ko.replace(ko[gh[0]:gh[1]+1], "")
-    #                     print(new_tags)
+    #                     # print(new_tags)
     #                     for l, t in enumerate(new_tags):
     #                         # print(t['position'])
     #                         new_tags[l]['position'] = [int(li)-len(ko[gh[0]:gh[1]+1]) if int(li) > gh[1] else int(li) for li in eval(str(t['position'])) ]
     #                         # print(len(ko[gh[0]:gh[1]+1]))
-    #                     print(ko)
-    #                     print(new_tags)
+    #                     # print(ko)
+    #                     # print(new_tags)
     #                     double_gh_n += len(ko[gh[0]:gh[1]+1])
     #                 gh = []
     #     if len(gh) == 1: # )하나
@@ -1084,12 +1237,26 @@ if __name__ == "__main__":
     #         ko = ko[1:]
     #         df.loc[i, 'ko_original'] = ko
     #         df.loc[i, 'ner.tags'] = str(new_tags)
-    # df.to_csv("corpus/{}_no_special_221028.csv".format(dir.name), sep=',')
+    # df.to_csv("new_corpus/{}_no_special_221114.csv".format(dir.name), sep=',')
+    # dictdf = df.to_dict()
+    # new_dictdf = dictdf['ner.tags']
+    # for i, dic in enumerate(dictdf['ner.tags'].values()):
+    #     # if dic == 
+    #     ndi = []
+    #     for di in eval(str(dic)):
+    #         d = eval(str(di))
+    #         d['position'] = eval(str(d['position']))
+    #         ndi.append(d)
+    #     dictdf['ner.tags']
+    #     new_dictdf[i] = ndi
+    # dictdf['ner.tags'] = new_dictdf
+    # with open("new_corpus/{}_no_special_221114.json", "w", encoding='utf-8') as outfile:
+    #     json.dump(dictdf, outfile, indent=2, ensure_ascii=False)
 
-    find_overlap_token(Path("corpus/new_corpus_no_overlap.csv_val_0.1.csv"), do_concat = True, name = 'val_data_3')
-    to_train_bert(Path("corpus/new_corpus_no_overlap_concat_val_data_3.csv"))
-            # print(df['ner.tags'][i])
-        # df.loc[i, 'ko_original'] = re.sub(r"[^\uAC00-\uD7A3a-zA-Z0-9~,.?\s]", "", d).strip()
-    # df['w/special'] = with_special
-    # df.to_csv('corpus/new_corpus_no_overlap.csv_test_0.1_no_special.csv', sep=',')
-    # print('done')
+    # # find_overlap_token(Path("new_corpus/new_corpus_no_overlap.csv_test_0.1.csv_no_special.csv"), do_concat = True, name = 'test_data_15')
+    # # to_train_bert(Path("corpus/new_corpus_no_overlap_concat_val_data_3.csv"))
+    #         # print(df['ner.tags'][i])
+    #     # df.loc[i, 'ko_original'] = re.sub(r"[^\uAC00-\uD7A3a-zA-Z0-9~,.?\s]", "", d).strip()
+    # # df['w/special'] = with_special
+    # # df.to_csv('corpus/new_corpus_no_overlap.csv_test_0.1_no_special.csv', sep=',')
+    # # print('done')
