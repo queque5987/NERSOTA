@@ -877,6 +877,22 @@ def train_validation_split(dir = Path("new_corpus/new_corpus_no_overlap.csv"), p
     val_df.to_csv("new_corpus/{}_val_{}.csv".format(dir.name, portion),index=False)
 
 if __name__ == "__main__":
+    with open("nersota_corpus_for_pretrain.json",'r', encoding='utf-8') as j_file:
+        j_dict = json.load(j_file)
+        j_dict = j_dict['scripts']
+    m_len = 0
+    n_len = len(j_dict[0])
+    oc = 0
+    for j in tqdm(j_dict):
+        if m_len < len(j):
+            m_len = len(j)
+        if n_len > len(j):
+            n_len = len(j)
+        if len(j) > 512:
+            oc += 1
+    print(m_len)
+    print(n_len)
+    print(oc)
     # no_overlap()
     # corpus_dir = "corpus/157.방송 콘텐츠 한-중, 한-일 번역 병렬 말뭉치 데이터"
     # corpus_dir = 'corpus/NIKL_SPOKEN_v1.2/국립국어원 구어 말뭉치(버전 1.2)'
@@ -902,22 +918,22 @@ if __name__ == "__main__":
     # # write_csv_aihub(json_dir)
     # write_csv(Sjson_dir)
 
-    find_overlap_token(Path("new_corpus/{}.csv".format("new_corpus_no_overlap.csv_test_0.1")), do_drop=True, name = '1110',no_drop_do_O= True , drop_tag_dict = {
-     'PER' : ['PERSON', 'PS'],
-     'FLD' : ['FD', 'STUDY_FIELD', 'STF'],
-     'AFW' : ['AF', 'AFA', 'WORK_OF_ART', 'AFW', 'PRODUCT', 'ARTIFACTS', 'ARF'],
-     'ORG' : ['OGG', 'ORG', 'ORGANIZATION'],
-     'LOC' : ['LC','LCG', 'LCP', 'LOCATION'],
-     'CVL' : ['CV', 'CIVILIZATION'],
-     'DAT' : ['DT', 'DATE'],
-     'TIM' : ['TI', 'TIME'],
-     'NUM' : ['QT', 'QUANTITY', 'QTT'],
-     'EVT' : ['EV', 'EVENT'],
-     'ANM' : ['AM', 'ANIMAL'],
-     'PLT' : ['PT', 'PLANT'],
-     'MAT' : ['MT', 'MATERIAL'],
-     'TRM' : ['TM','TMI', 'TMIG', 'TMM', 'TERM']
-    })
+    # find_overlap_token(Path("new_corpus/{}.csv".format("new_corpus_no_overlap.csv_test_0.1")), do_drop=True, name = '1110',no_drop_do_O= True , drop_tag_dict = {
+    #  'PER' : ['PERSON', 'PS'],
+    #  'FLD' : ['FD', 'STUDY_FIELD', 'STF'],
+    #  'AFW' : ['AF', 'AFA', 'WORK_OF_ART', 'AFW', 'PRODUCT', 'ARTIFACTS', 'ARF'],
+    #  'ORG' : ['OGG', 'ORG', 'ORGANIZATION'],
+    #  'LOC' : ['LC','LCG', 'LCP', 'LOCATION'],
+    #  'CVL' : ['CV', 'CIVILIZATION'],
+    #  'DAT' : ['DT', 'DATE'],
+    #  'TIM' : ['TI', 'TIME'],
+    #  'NUM' : ['QT', 'QUANTITY', 'QTT'],
+    #  'EVT' : ['EV', 'EVENT'],
+    #  'ANM' : ['AM', 'ANIMAL'],
+    #  'PLT' : ['PT', 'PLANT'],
+    #  'MAT' : ['MT', 'MATERIAL'],
+    #  'TRM' : ['TM','TMI', 'TMIG', 'TMM', 'TERM']
+    # })
     # find_overlap_token(Path("corpus/new_corpus_no_overlap.csv_test_0.1.csv_no_special_221028.csv"), do_drop=True, name = "letr", drop_tag_dict = {
     # 'PERSON' : ['PERSON', 'PS_NAME', 'PS_CHARACTER', 'PS_PET'],
     # 'NORP' : ['OGG_RELIGION', 'OGG_POLITICS'],
