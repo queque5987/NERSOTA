@@ -867,28 +867,65 @@ def find_overlap_token_letr(dir : Path, concat_tag_dict, drop_tag_dict, do_conca
         df.to_csv("corpus/{}_{}.csv".format("output_test_letr_API", name),index=False)
         # df_del = df.drop(to_del)
         # df_del.to_csv("new_corpus/{}_{}.csv".format("new_corpus_no_overlap_drop", name),index=False)
-def train_validation_split(dir = Path("new_corpus/new_corpus_no_overlap.csv"), portion = 0.1):
+def train_validation_split(dir = Path("new_corpus/new_corpus_no_overlap.csv"), portion = 0.05, is_json = False):
     import random
     random.seed(portion)
-    df = pd.read_csv(dir, sep=',')
-    train = list(range(len(df)))
+    print('reading file . . .')
+    if is_json:
+        with open(dir, "r", encoding = 'utf-8') as f:
+            df = json.load(f)
+        df = df['scripts']
+    else:
+        df = pd.read_csv(dir, sep=',')
+    # train = list(range(len(df)))
+    print(df[:10])
+    random.shuffle(df)
+    print(df[:10])
+    # print("test : {}\nvalidation : {}\ntrain : {}".format(len(test), len(val), len(train)))
 
-    test = random.sample(train, int(len(df)*portion))
-    for i in test: train.remove(i)
+    if is_json:
+        print('saving test . . .')
+        with open("{}_test_portion.json".format(dir.name, portion), "w", encoding='utf-8') as outfile:
+            json.dump(df[:int(len(df)*portion)], outfile, indent=2, ensure_ascii=False)
+        print('saving validation . . .')
+        with open("{}_val_portion.json".format(dir.name, portion), "w", encoding='utf-8') as outfile:
+            json.dump(df[int(len(df)*portion):int(len(df)*portion)*2], outfile, indent=2, ensure_ascii=False)
+        print('saving train . . .')
+        with open("{}_train_portion.json".format(dir.name, portion), "w", encoding='utf-8') as outfile:
+            json.dump(df[int(len(df)*portion)*2:], outfile, indent=2, ensure_ascii=False)
+    # print('sampling . . .')
+    # test = random.sample(train, int(len(df)*portion))
+    # # for i in tqdm(test): train.remove(i)
 
-    val = random.sample(train, int(len(df)*portion))
-    for i in val: train.remove(i)
+    # val = random.sample(train, int(len(df)*portion))
+    # # for i in tqdm(val): train.remove(i)
+    return 0
+
+
 
     print("test : {}\nvalidation : {}\ntrain : {}".format(len(test), len(val), len(train)))
 
-    test_df = pd.DataFrame([df.loc[i] for i in test])
-    train_df = pd.DataFrame([df.loc[i] for i in train])
-    val_df = pd.DataFrame([df.loc[i] for i in val])
-    test_df.to_csv("new_corpus/{}_test_{}.csv".format(dir.name, portion),index=False)
-    train_df.to_csv("new_corpus/{}_train_{}.csv".format(dir.name, portion),index=False)
-    val_df.to_csv("new_corpus/{}_val_{}.csv".format(dir.name, portion),index=False)
+    if is_json:
+        print('saving test . . .')
+        with open("{}_test_portion.json".format(dir.name, portion), "w", encoding='utf-8') as outfile:
+            json.dump([df[i] for i in test], outfile, indent=2, ensure_ascii=False)
+        print('saving train . . .')
+        with open("{}_train_portion.json".format(dir.name, portion), "w", encoding='utf-8') as outfile:
+            json.dump([df[i] for i in test], outfile, indent=2, ensure_ascii=False)
+        print('saving validation . . .')
+        with open("{}_val_portion.json".format(dir.name, portion), "w", encoding='utf-8') as outfile:
+            json.dump([df[i] for i in test], outfile, indent=2, ensure_ascii=False)
+    else:
+        test_df = pd.DataFrame([df.loc[i] for i in test])
+        train_df = pd.DataFrame([df.loc[i] for i in train])
+        val_df = pd.DataFrame([df.loc[i] for i in val])
+        test_df.to_csv("new_corpus/{}_test_{}.csv".format(dir.name, portion),index=False)
+        train_df.to_csv("new_corpus/{}_train_{}.csv".format(dir.name, portion),index=False)
+        val_df.to_csv("new_corpus/{}_val_{}.csv".format(dir.name, portion),index=False)
+    print('done saving')
 
 if __name__ == "__main__":
+    train_validation_split(Path('nersota_corpus_for_pretrain.json'), is_json= True)
     # no_overlap()
     # corpus_dir = "corpus/157.방송 콘텐츠 한-중, 한-일 번역 병렬 말뭉치 데이터"
     # corpus_dir = 'corpus/NIKL_SPOKEN_v1.2/국립국어원 구어 말뭉치(버전 1.2)'
@@ -914,22 +951,22 @@ if __name__ == "__main__":
     # # write_csv_aihub(json_dir)
     # write_csv(Sjson_dir)
 
-    find_overlap_token(Path("new_corpus/{}.csv".format("new_corpus_no_overlap.csv_test_0.1")), do_drop=True, name = '1110',no_drop_do_O= True , drop_tag_dict = {
-     'PER' : ['PERSON', 'PS'],
-     'FLD' : ['FD', 'STUDY_FIELD', 'STF'],
-     'AFW' : ['AF', 'AFA', 'WORK_OF_ART', 'AFW', 'PRODUCT', 'ARTIFACTS', 'ARF'],
-     'ORG' : ['OGG', 'ORG', 'ORGANIZATION'],
-     'LOC' : ['LC','LCG', 'LCP', 'LOCATION'],
-     'CVL' : ['CV', 'CIVILIZATION'],
-     'DAT' : ['DT', 'DATE'],
-     'TIM' : ['TI', 'TIME'],
-     'NUM' : ['QT', 'QUANTITY', 'QTT'],
-     'EVT' : ['EV', 'EVENT'],
-     'ANM' : ['AM', 'ANIMAL'],
-     'PLT' : ['PT', 'PLANT'],
-     'MAT' : ['MT', 'MATERIAL'],
-     'TRM' : ['TM','TMI', 'TMIG', 'TMM', 'TERM']
-    })
+    # find_overlap_token(Path("new_corpus/{}.csv".format("new_corpus_no_overlap.csv_test_0.1")), do_drop=True, name = '1110',no_drop_do_O= True , drop_tag_dict = {
+    #  'PER' : ['PERSON', 'PS'],
+    #  'FLD' : ['FD', 'STUDY_FIELD', 'STF'],
+    #  'AFW' : ['AF', 'AFA', 'WORK_OF_ART', 'AFW', 'PRODUCT', 'ARTIFACTS', 'ARF'],
+    #  'ORG' : ['OGG', 'ORG', 'ORGANIZATION'],
+    #  'LOC' : ['LC','LCG', 'LCP', 'LOCATION'],
+    #  'CVL' : ['CV', 'CIVILIZATION'],
+    #  'DAT' : ['DT', 'DATE'],
+    #  'TIM' : ['TI', 'TIME'],
+    #  'NUM' : ['QT', 'QUANTITY', 'QTT'],
+    #  'EVT' : ['EV', 'EVENT'],
+    #  'ANM' : ['AM', 'ANIMAL'],
+    #  'PLT' : ['PT', 'PLANT'],
+    #  'MAT' : ['MT', 'MATERIAL'],
+    #  'TRM' : ['TM','TMI', 'TMIG', 'TMM', 'TERM']
+    # })
     # find_overlap_token(Path("corpus/new_corpus_no_overlap.csv_test_0.1.csv_no_special_221028.csv"), do_drop=True, name = "letr", drop_tag_dict = {
     # 'PERSON' : ['PERSON', 'PS_NAME', 'PS_CHARACTER', 'PS_PET'],
     # 'NORP' : ['OGG_RELIGION', 'OGG_POLITICS'],
@@ -1070,8 +1107,8 @@ if __name__ == "__main__":
     #         df.loc[i, 'ner.tags'] = str(new_tags)
     # df.to_csv("corpus/{}_no_special_221028.csv".format(dir.name), sep=',')
 
-    find_overlap_token(Path("corpus/new_corpus_no_overlap.csv_val_0.1.csv"), do_concat = True, name = 'val_data_3')
-    to_train_bert(Path("corpus/new_corpus_no_overlap_concat_val_data_3.csv"))
+    # find_overlap_token(Path("corpus/new_corpus_no_overlap.csv_val_0.1.csv"), do_concat = True, name = 'val_data_3')
+    # to_train_bert(Path("corpus/new_corpus_no_overlap_concat_val_data_3.csv"))
             # print(df['ner.tags'][i])
         # df.loc[i, 'ko_original'] = re.sub(r"[^\uAC00-\uD7A3a-zA-Z0-9~,.?\s]", "", d).strip()
     # df['w/special'] = with_special
