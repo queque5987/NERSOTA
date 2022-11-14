@@ -99,18 +99,18 @@ outputs = model(**inputs)
 print(outputs.keys())
 print(outputs.loss)
 
-text = scripts
+text = scripts[:100000]
 
 inputs = tokenizer(text, return_tensors='pt', max_length=512, truncation=True, padding='max_length')
-print(inputs)
+# print(inputs)
 inputs['labels'] = inputs.input_ids.detach().clone()
-print(inputs.keys())
+# print(inputs.keys())
 # create random array of floats with equal dimensions to input_ids tensor
 rand = torch.rand(inputs.input_ids.shape)
 # create mask array
 mask_arr = (rand < 0.15) * (inputs.input_ids != 101) * \
            (inputs.input_ids != 102) * (inputs.input_ids != 0)
-print(mask_arr)
+# print(mask_arr)
 selection = []
 
 for i in range(inputs.input_ids.shape[0]):
@@ -121,7 +121,7 @@ print(selection[:5])
 
 for i in range(inputs.input_ids.shape[0]):
     inputs.input_ids[i, selection[i]] = 103
-print(inputs.input_ids)
+# print(inputs.input_ids)
 
 class MeditationsDataset(torch.utils.data.Dataset):
     def __init__(self, encodings):
@@ -141,33 +141,66 @@ model.to(device)
 # activate training mode
 model.train()
 
-from transformers import AdamW
-# initialize optimizer
-optim = AdamW(model.parameters(), lr=5e-5)
+# from transformers import AdamW
+# # initialize optimizer
+# optim = AdamW(model.parameters(), lr=5e-5)
 
-from tqdm import tqdm  # for our progress bar
+# from tqdm import tqdm  # for our progress bar
 
-epochs = 2
+# epochs = 10
+# min_loss = 9999
+# losses = []
+# with torch.no_grad():
+#     for epoch in range(epochs):
+#         # setup loop with TQDM and dataloader
+#         loop = tqdm(loader, leave=True)
+#         for batch in loop:
+#             # initialize calculated gradients (from prev step)
+#             optim.zero_grad()
+#             # pull all tensor batches required for training
+#             input_ids = batch['input_ids'].to(device)
+#             attention_mask = batch['attention_mask'].to(device)
+#             labels = batch['labels'].to(device)
+#             # process
+#             outputs = model(input_ids, attention_mask=attention_mask,
+#                             labels=labels)
+#             # extract loss
+#             loss = outputs.loss
+#             # calculate loss for every parameter that needs grad update
+#             loss.requires_grad_(True) # to fix : RuntimeError: element 0 of tensors does not require grad and does not have a grad_fn
+#             loss.backward()
+#             # update parameters
+#             optim.step()
+#             # print relevant info to progress bar
+#             loop.set_description(f'Epoch {epoch}')
+#             loop.set_postfix(loss=loss.item())
+#             # print(type(loss.item()))
+#             # print(loss.item())
+#             min_loss = loss.item() if loss.item() < min_loss else min_loss
+#         print("min_loss : {}".format(min_loss))
+#         losses.append({epoch : min_loss})
+#         min_loss = 9999
+# print(losses)
 
-for epoch in range(epochs):
-    # setup loop with TQDM and dataloader
-    loop = tqdm(loader, leave=True)
-    for batch in loop:
-        # initialize calculated gradients (from prev step)
-        optim.zero_grad()
-        # pull all tensor batches required for training
-        input_ids = batch['input_ids'].to(device)
-        attention_mask = batch['attention_mask'].to(device)
-        labels = batch['labels'].to(device)
-        # process
-        outputs = model(input_ids, attention_mask=attention_mask,
-                        labels=labels)
-        # extract loss
-        loss = outputs.loss
-        # calculate loss for every parameter that needs grad update
-        loss.backward()
-        # update parameters
-        optim.step()
-        # print relevant info to progress bar
-        loop.set_description(f'Epoch {epoch}')
-        loop.set_postfix(loss=loss.item())
+from transformers import TrainingArguments
+
+args = TrainingArguments(
+    output_dir='out',
+    per_device_train_batch_size=4,
+    num_train_epochs=2
+)
+
+from transformers import Trainer
+
+trainer = Trainer(
+    model=model,
+    args=args,
+    train_dataset=dataset
+)
+import gc
+
+gc.collect()
+torch.cuda.empty_cache()
+
+# with torch.no_grad():
+trainer.train()

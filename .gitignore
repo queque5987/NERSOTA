@@ -7,4 +7,5 @@ corpus/
 *.csv
 *.xlsx
 *.txt
-train_1028/
+train_1028/__pycache__/
+train_1028/ner/
