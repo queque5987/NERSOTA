@@ -862,30 +862,19 @@ def train_validation_split(dir = Path("new_corpus/new_corpus_no_overlap.csv"), p
     if is_json:
         with open(dir, "r", encoding = 'utf-8') as f:
             df = json.load(f)
-        df = df['scripts']
     else:
         df = pd.read_csv(dir, sep=',')
     # train = list(range(len(df)))
-    print(df[:10])
     random.shuffle(df)
-    print(df[:10])
     # print("test : {}\nvalidation : {}\ntrain : {}".format(len(test), len(val), len(train)))
-
-    with open(dir, 'r', encoding='utf-8') as j_file:
-        dict = json.load(j_file)
-        dict = dict['scripts']
-    print(dict[:3])
-    random.shuffle(dict)
-    print('shuffled')
-    print(dict[:3])
-    test = dict[:int(len(dict)*portion)]
-    val = dict[int(len(dict)*portion):int(len(dict)*portion)*2]
-    train = dict[int(len(dict)*portion)*2:]
-    with open("{}_test_{}".format(dir.name, portion), "w", encoding='utf-8') as outfile:
+    test = df[:int(len(df)*portion)]
+    val = df[int(len(df)*portion):int(len(df)*portion)*2]
+    train = df[int(len(df)*portion)*2:]
+    with open("corpus/{}_test_{}.json".format(dir.name, portion), "w", encoding='utf-8') as outfile:
         json.dump(test, outfile, indent=2, ensure_ascii=False)
-    with open("{}_eval_{}".format(dir.name, portion), "w", encoding='utf-8') as outfile:
+    with open("corpus/{}_eval_{}.json".format(dir.name, portion), "w", encoding='utf-8') as outfile:
         json.dump(val, outfile, indent=2, ensure_ascii=False)
-    with open("{}_train_{}".format(dir.name, portion), "w", encoding='utf-8') as outfile:
+    with open("corpus/{}_train_{}.json".format(dir.name, portion), "w", encoding='utf-8') as outfile:
         json.dump(train, outfile, indent=2, ensure_ascii=False)
     # test = random.sample(train, int(len(df)*portion))
     # for i in test: train.remove(i)
@@ -903,48 +892,49 @@ def train_validation_split(dir = Path("new_corpus/new_corpus_no_overlap.csv"), p
     # val_df.to_csv("new_corpus/{}_val_{}.csv".format(dir.name, portion),index=False)
 
 if __name__ == "__main__":
-    # train_validation_split('nersota_corpus_for_pretrain.json')
+    train_validation_split(dir=Path('nersota_corpus_for_pretrain_no_special_len_under64_2211141659.json'), is_json=True)
     # # return 0
     # with open("new_corpus/{}_no_special_221114.json",'r', encoding='utf-8') as j_file:
     #     j_dict = json.load(j_file)
     #     f = j_dict['ko_original']
-    with open("nersota_corpus_for_pretrain_no_special_2211141633.json",'r', encoding='utf-8') as j_file:
-        j_dict = json.load(j_file)
-        p = j_dict
-    # hmap = {}
-    # for fk in tqdm(f):
-    #     if hmap.get(hash(fk.strip())):
-    #         if hmap.get(hash(fk.strip())) == fk.strip():
-    #             print("중복! - ",fk)
-    #         else:
-    #             print("??", end =" ")
-    #             print(hmap.get(hash(fk.strip())))
-    #     else:
-    #         hmap[hash(fk.strip())] = fk.strip()
-    # print("검사중...")
-    # for pk in tqdm(p):
-    #     if hmap.get(hash(pk.strip())) == pk.strip():
-    #         print("중복! - ", pk)
+    # with open("corpus/nersota_corpus_for_pretrain_no_special_2211141633.json",'r', encoding='utf-8') as j_file:
+    #     j_dict = json.load(j_file)
+    #     p = j_dict
+    # # hmap = {}
+    # # for fk in tqdm(f):
+    # #     if hmap.get(hash(fk.strip())):
+    # #         if hmap.get(hash(fk.strip())) == fk.strip():
+    # #             print("중복! - ",fk)
+    # #         else:
+    # #             print("??", end =" ")
+    # #             print(hmap.get(hash(fk.strip())))
+    # #     else:
+    # #         hmap[hash(fk.strip())] = fk.strip()
+    # # print("검사중...")
+    # # for pk in tqdm(p):
+    # #     if hmap.get(hash(pk.strip())) == pk.strip():
+    # #         print("중복! - ", pk)
 
-    m_len = 0
-    n_len = len(p[0])
-    oc = 0
-    new_p = []
-    n = 0
-    for j in tqdm(p):
-        if m_len < len(j):
-            m_len = len(j)
-        if n_len > len(j):
-            n_len = len(j)
-        if len(j) < 512:
-            new_p.append(j)
-        else:
-            oc += 1
-    print(m_len)
-    print(n_len)
-    print(oc)
-    with open("nersota_corpus_for_pretrain_no_special_len_under512_2211141659.json", "w", encoding='utf-8') as outfile:
-        json.dump(new_p, outfile, indent=2, ensure_ascii=False)
+    # m_len = 0
+    # n_len = len(p[0])
+    # oc = 0
+    # new_p = []
+    # n = 0
+    # for j in tqdm(p):
+    #     if m_len < len(j):
+    #         m_len = len(j)
+    #     if n_len > len(j):
+    #         n_len = len(j)
+    #     if len(j) < 64:
+    #         new_p.append(j)
+    #     else:
+    #         oc += 1
+    # print(m_len)
+    # print(n_len)
+    # print(oc)
+    # print(len(new_p))
+    # with open("nersota_corpus_for_pretrain_no_special_len_under64_2211141659.json", "w", encoding='utf-8') as outfile:
+    #     json.dump(new_p, outfile, indent=2, ensure_ascii=False)
     # no_overlap()
     # corpus_dir = "corpus/157.방송 콘텐츠 한-중, 한-일 번역 병렬 말뭉치 데이터"
     # corpus_dir = 'corpus/NIKL_SPOKEN_v1.2/국립국어원 구어 말뭉치(버전 1.2)'
