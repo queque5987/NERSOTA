@@ -13,7 +13,7 @@ tokenizer = RobertaTokenizer.from_pretrained("roberta-base")
 config = RobertaConfig.from_pretrained("roberta-base")
 model = RobertaForMaskedLM(config)
 
-device = torch.device('cuda:1') if torch.cuda.is_available() else torch.device('cpu')
+device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 model.to(device)
 
 class MeditationsDataset(torch.utils.data.Dataset):
@@ -103,9 +103,9 @@ def collate_fn(text):
     # print("done making dataset")
     return inputs
 
-train_dir = 'nersota_corpus_for_pretrain_no_special_len_under64_2211141659.json_train_0.05.json'
-eval_dir = 'nersota_corpus_for_pretrain_no_special_len_under64_2211141659.json_eval_0.05.json'
-mode = "bpe"
+train_dir = 'dataset/nersota_corpus_for_pretrain_no_special_len_under64_2211141659.json_train_0.05.json'
+eval_dir = 'dataset/nersota_corpus_for_pretrain_no_special_len_under64_2211141659.json_eval_0.05.json'
+# mode = "bpe"
 print("loading data")
 with open(train_dir, 'r', encoding='utf-8') as j_file:
     train_data = json.load(j_file)
@@ -124,11 +124,11 @@ print("gathering dataset")
 
 args = TrainingArguments(
     output_dir='out_roberta_base_pretrained_bpe_20221122',
-    per_device_train_batch_size=128,
-    per_device_eval_batch_size=128,
-    num_train_epochs=5,
+    per_device_train_batch_size=4,
+    per_device_eval_batch_size=4,
+    num_train_epochs=40,
     evaluation_strategy="steps",
-    eval_steps=10000,
+    eval_steps=20000,
     save_strategy="steps",
     save_steps=100000,
     # load_best_model_at_end = True,
