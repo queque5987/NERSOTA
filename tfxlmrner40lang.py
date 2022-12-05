@@ -30,6 +30,29 @@ class tfxml():
                 n += len(out['entity'])+2
         return temp_text
 
+class robertaMLM():
+    def __init__(self, trained_tokenzier = False, ckpt_dir = "./out_roberta_base_KoSimCSEtokenizer_20221202/checkpoint-550000/"):
+        import json
+        from transformers import RobertaTokenizer, RobertaForMaskedLM, AutoTokenizer
+        import torch
+        
+        if trained_tokenzier:
+            from tokenizers import ByteLevelBPETokenizer
+            self.tokenizer = ByteLevelBPETokenizer(
+                './bpe/vocab.json',
+                './bpe/merges.txt'
+            )
+        else: self.tokenizer = AutoTokenizer.from_pretrained('BM-K/KoSimCSE-roberta')
+        with open(ckpt_dir + "config.json", "r") as f
+            self.config = json.load(f)
+        self.model = RobertaForMaskedLM(self.config)
+        self.model = self.model.load_state_dict(torch.load(ckpt_dir + "pytorch_model.bin"))
+        self.mmodel.eval()
+        self.pipeline = pipeline("fill-mask", model=model, tokenizer=tokenizer)
+    def inference(self, text):
+        return self.pipeline(text)
+        
+
 class xlmr():
     def __init__(self):
         self.tokenizer = AutoTokenizer.from_pretrained("xlm-roberta-large-finetuned-conll03-english")
