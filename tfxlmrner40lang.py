@@ -1,13 +1,15 @@
 from transformers import pipeline
+from tqdm import tqdm
 # import spacy
 # pip install --no-cache-dir transformers sentencepiece
 # pip install tensorflow <- ?
 # pip install torch 1.12.1
 # https://aka.ms/vs/16/release/vc_redist.x64.exe
 
-from transformers import AutoTokenizer, AutoModelForTokenClassification, BertConfig, TFBertForSequenceClassification
+from transformers import AutoTokenizer, AutoModelForTokenClassification, BertConfig, TFBertForSequenceClassification, BatchEncoding
 import requests
 import json
+import torch
 # tokenizer = AutoTokenizer.from_pretrained("jplu/tf-xlm-r-ner-40-lang")#, use_fast = False)
 # model = AutoModelForTokenClassification.from_pretrained("jplu/tf-xlm-r-ner-40-lang", from_tf=True)
 
@@ -35,27 +37,40 @@ class robertaMLM():
         from transformers import RobertaTokenizer, RobertaConfig, RobertaForMaskedLM, AutoTokenizer
         from tokenizers import ByteLevelBPETokenizer
         import torch
-        ckpt_dir = ""
+        ckpt_dir = "./out_roberta_base_KoSimCSEtokenizer_20221202/checkpoint-550000/"
         if not trained:
             self.tokenizer = AutoTokenizer.from_pretrained('BM-K/KoSimCSE-roberta')
         else:
             self.tokenizer = ByteLevelBPETokenizer(
             'bpe/vocab.json',
             'bpe/merges.txt'
-        )
+            )
+            # self.tokenizer.mask_token = "<mask>"
+            # self.tokenizer.mask_token_id = 4
+            # self.tokenizer.save("workspace/tokenizer")
+            # self.tokenizer = PreTrainedTokenizerFast(tokenizer_file="workspace/tokenizer/")
         with open(ckpt_dir + "config.json", "r") as file:
             self.config = json.load(file)
-        self.model = RobertaForMaskedLM(self.config)
-        self.model.load_state_dict(torch.load(ckpt_dir + "*.bin"))
+        self.model = RobertaForMaskedLM.from_pretrained(ckpt_dir)
+        self.model.load_state_dict(torch.load(ckpt_dir + "pytorch_model.bin"), strict=False)
+        # self.model.to(torch.device('cuda'))
         self.model.eval()
         self.pipeline = pipeline(
-            "ner",
+            "fill-mask",
             model=self.model,
             tokenizer=self.tokenizer,
             framework="pt"
         )
-    def infernece(self, text):
-        return pipeline(text)
+        self.masktoken = self.tokenizer.mask_token
+
+    # def encode(self, text):
+    #     e = self.tokenizer.encode(text)
+    #     return BatchEncoding({"input_ids" : torch.tensor(e.ids), "attention_mask" : torch.tensor(e.attention_mask)})
+    def inference(self, text):
+        # e_input = self.encode(text)
+        # print(e_input.input_ids.size())
+        # return self.model(e_input)
+        return self.pipeline(text.replace("<mask>", self.masktoken))
 
 class xlmr():
     def __init__(self):
@@ -129,16 +144,16 @@ if __name__ == "__main__":
     # text = "서울 전역에 내리는 소나기는 현대 기아 모터스의 주가 상승에 긍정적인 영향을 끼쳤다."
     # spcaye = spacy_example()
     # letr = letrAPI()
-    import pandas as pd
-    from tqdm import tqdm
-    import time
-    import random
-    # ckpt_name = 'epoch=2-val_loss=0.06'
-    # kcbert_model = kcbert.inference('C:/nlpbook/checkpoint-ner/{}.ckpt'.format(ckpt_name))
-    # test_dataset = pd.read_csv('corpus/new_corpus_no_overlap_no_drop_test_data_4_1109.csv', sep=',')
-    # kcbert_model = kcbert()
-    kcbert_model = ftd_kcbert.inference(ckpt_dir="epoch=2-val_loss=0.14.ckpt", label_map_dir="label_map.txt")
-    j = "15rogowntpdy.json"
+    # import pandas as pd
+    # from tqdm import tqdm
+    # import time
+    # import random
+    # # ckpt_name = 'epoch=2-val_loss=0.06'
+    # # kcbert_model = kcbert.inference('C:/nlpbook/checkpoint-ner/{}.ckpt'.format(ckpt_name))
+    # # test_dataset = pd.read_csv('corpus/new_corpus_no_overlap_no_drop_test_data_4_1109.csv', sep=',')
+    # # kcbert_model = kcbert()
+    # kcbert_model = ftd_kcbert.inference(ckpt_dir="epoch=2-val_loss=0.14.ckpt", label_map_dir="label_map.txt")
+    j = "./dataset/nersota_corpus_for_pretrain_no_special_len_under64_test_0.05_masked.json"
     with open(j,'r', encoding='utf-8') as j_file:
         lines = json.load(j_file)
     # lines = []
@@ -159,24 +174,37 @@ if __name__ == "__main__":
     #     # print(total_output[i:i+5 if i+5 <= len(lines) else -1])
     #     if idx == len(lines): break
     # xlmr = xlmr()
+    roberta = robertaMLM(trained = False)
+    print(roberta.inference("재석이형 <mask>로 와봐요."))
     final_outputs = []
-    for line in tqdm(lines):
-        outputs = []
-        # lines.append(line.strip())
-        output = kcbert_model.inference_fn(line)
-        # output = kcbert_model.inference_fn(line)
-        # for result in output['result']:
-        #     outputs.append(result)
-        final_outputs.append({'sentence' : line, 'ner' : output})
-        # print(outputs)
-        # break
-        # output = xlmr.inference(line)
-        # t, o, b = spcaye.inference(line)
-        # lines.append({'ko_original' : line, 'tokens' : t, 'output' : o, 'bio_tags' : b})
-        # break
-    # print(lines[:1])
-    with open("15rogowntpdy_predicted.json", "w", encoding='utf-8') as outfile:
+    count = 0
+    for i, line in tqdm(enumerate(lines)):
+    #     outputs = []
+    #     # lines.append(line.strip())
+    #     output = kcbert_model.inference_fn(line)
+    #     # output = kcbert_model.inference_fn(line)
+        output = roberta.inference(line)
+        final_outputs.append(output)
+    #     # for result in output['result']:
+    #     #     outputs.append(result)
+    #     final_outputs.append({'sentence' : line, 'ner' : output})
+    #     # print(outputs)
+    #     # break
+    #     # output = xlmr.inference(line)
+    #     # t, o, b = spcaye.inference(line)
+    #     # lines.append({'ko_original' : line, 'tokens' : t, 'output' : o, 'bio_tags' : b})
+    #     # break
+    # # print(lines[:1])
+        if i%50000 == 0:
+            print(final_outputs[0])
+            with open("roberta_base_normal{}.json".format(count), "w", encoding='utf-8') as outfile:
+                json.dump(final_outputs, outfile, indent=2, ensure_ascii=False)
+            count += 1
+            final_outputs = []
+    print(final_outputs[0])
+    with open("roberta_base_normal{}.json".format(count), "w", encoding='utf-8') as outfile:
         json.dump(final_outputs, outfile, indent=2, ensure_ascii=False)
+    final_outputs = []
     # output = pd.DataFrame(final_outputs)
     # output.to_csv('output_kc_bert_{}_1110.csv'.format('ckpt_name'), index=False)
     # print('done')
