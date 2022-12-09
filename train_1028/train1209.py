@@ -80,7 +80,7 @@ def train():
         batch_size=1,# if torch.cuda.is_available() else 4,
         learning_rate=1e-5,
         max_seq_length=64,
-        epochs=1, 
+        epochs=10, 
         tpu_cores=0 if torch.cuda.is_available() else 8,
         seed=7,
         downstream_corpus_root_dir="",

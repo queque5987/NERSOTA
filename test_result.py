@@ -128,7 +128,6 @@ def getScores(p_dir, y_dir):
             y_new.append(ppp)
     p = p_new
     y = y_new
-<<<<<<< HEAD
     print('model : {}'.format('KcBert'))
     print('learning rate : 0.00005, epoch : 3, batch_size : 32, val_loss : 0.06')
     print('accuracy', metrics.accuracy_score(y,p))

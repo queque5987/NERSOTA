@@ -38,7 +38,8 @@ class inference():
         )
         import torch
         fine_tuned_model_ckpt = torch.load(
-            ckpt_dir,
+            # ckpt_dir,
+            'train_1028/pytorch_model.bin',
             map_location = torch.device('cpu')
         )
         from transformers import BertConfig

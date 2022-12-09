@@ -30,7 +30,7 @@ class BertPretrained():
             framework = "pt"
         )
     def inference(self, text):
-        
+        pass
         
 
 class tfxml():
