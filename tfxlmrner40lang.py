@@ -11,6 +11,28 @@ import json
 # tokenizer = AutoTokenizer.from_pretrained("jplu/tf-xlm-r-ner-40-lang")#, use_fast = False)
 # model = AutoModelForTokenClassification.from_pretrained("jplu/tf-xlm-r-ner-40-lang", from_tf=True)
 
+class BertPretrained():
+    def __init__(self, model_path = "./out_kcbert_base_221115_2332/checkpoint-4050000/"):
+        from transformers import BertForMaskedLM, BertTokenizer
+        import torch
+        with open(model_path + 'config.json', 'r') as f:
+            config = json.load(f)
+        self.model = BertForMaskedLM(config)
+        self.model = self.model.load_state_dict(torch.load(model_path + 'pytorch_model.bin'))
+        self.tokenizer = BertTokenizer.from_pretrained(
+            "beomi/kcbert-base",
+            do_lower_case=False,
+        )
+        self.mlm = pipeline(
+            "fill-mask",
+            model = self.model,
+            tokenizer = self.tokenizer,
+            framework = "pt"
+        )
+    def inference(self, text):
+        
+        
+
 class tfxml():
     def __init__(self):
         self.nlp_ner = pipeline(
@@ -106,10 +128,13 @@ if __name__ == "__main__":
     from tqdm import tqdm
     import time
     import random
+    dir = "15rogowntpdy.json"
+    with open(dir, "r", encoding = 'utf-8') as f:
+        test_dataset = json.load(f)
     # ckpt_name = 'epoch=2-val_loss=0.06'
     # kcbert_model = kcbert.inference('C:/nlpbook/checkpoint-ner/{}.ckpt'.format(ckpt_name))
-    test_dataset = pd.read_csv('corpus/new_corpus_no_overlap_no_drop_test_data_4_1109.csv', sep=',')
-    kcbert_model = kcbert()
+    # test_dataset = pd.read_csv('corpus/new_corpus_no_overlap_no_drop_test_data_4_1109.csv', sep=',')
+    # kcbert_model = kcbert()
     # lines = []
     lines = test_dataset['ko_original'].values.tolist()
     # print(len(lines))
