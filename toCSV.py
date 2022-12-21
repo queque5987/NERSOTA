@@ -443,6 +443,222 @@ def write_csv(json_dir):
     # # udf.to_csv("new_corpus/{}3.csv".format("new_corpus"),index=False)
     # print(hmap.values())
     return 0
+
+def to_train_bert_labelstudio_concat(dirs, output_dir):
+    out = []
+    sub_dir = "mo_s"
+    with open("./tagging/{}/dir_test.json".format(sub_dir), "w", encoding="utf-8") as file:
+        json.dump(out, file, indent=2, ensure_ascii=False)
+    with open(output_dir, "w", encoding="utf-8") as file:
+        json.dump(out, file, indent=2, ensure_ascii=False)
+    hmap = {}
+    no_tag_hmap = {}
+    # try:
+    #     with open("tagging/no_tag_hmap.json", "r", encoding="utf-8") as file:
+    #         no_tag_hmap = json.load(file)
+    #         print(no_tag_hmap)
+    # except FileNotFoundError:
+    #     print("can't find no_tag_hmap.json")
+    def update_hmap(ko, hmap):
+        # try: 
+        #     with open("tagging/hmap.json", "r", encoding="utf-8") as file:
+        #         hmap = json.load(file)
+        # except FileNotFoundError:
+        #     print("can't find no_tag_hmap.json")
+        #     hmap = {}
+        if hmap.get(hash(ko)):
+            return False, hmap
+        hmap[hash(ko)] = 1
+        # with open("tagging/hmap.json", "w", encoding="utf-8") as file:
+        #     json.dump(hmap, file)
+        return True, hmap
+    def to_train_bert_labelstudio(corpus_dir, no_tag_hmap, hmap):
+        with open(corpus_dir, "r", encoding="utf-8") as file:
+            corpus = json.load(file)
+        with open("tagging/no_tag_hmap.json", "r", encoding="utf-8") as file:
+            no_tag_hmap = json.load(file)
+        new_corpus = []
+        split = "␞"
+        tag_dict = {'PER' : ['PERSON', 'PS'],
+        'STF' : ['FD', 'STUDY_FIELD'],
+        'THR' : ['TR', 'THEORY', 'THERORY'],
+        'ARF' : ['AF', 'AFA', 'WORK_OF_ART', 'AFW', 'PRODUCT', 'ARTIFACTS', 'ARRIFACTS'],
+        'ORG' : ['OGG', 'ORG', 'ORGANIZATION'],
+        'CVL' : ['CV', 'CIVILIZATION'],
+        'LOC' : ['LC','LCG', 'LCP', 'LOCATION'],
+        'DAT' : ['DT', 'DATE'],
+        'TIM' : ['TI', 'TIME'],
+        'QTT' : ['QT', 'QUANTITY'],
+        'EVT' : ['EV', 'EVENT'],
+        'ANM' : ['AM', 'ANIMAL'],
+        'PLT' : ['PT', 'PLANT'],
+        'MAT' : ['MT', 'MATERIAL'],
+        'TRM' : ['TM','TMI', 'TMIG', 'TMM', 'TERM']
+        }
+        def tag_change(tag):
+            n_tag = None
+            for key, value in tag_dict.items():
+                if tag in value:
+                    n_tag = key
+            if n_tag: return n_tag
+            else:
+                print(" unexpected tag : " + tag)
+                for k in tag_dict.keys():
+                    print(k, end=", ")
+                while(True):
+                    new_tag = input("select tag : ")
+                    if tag_dict.get(new_tag):
+                        tag_dict[new_tag].append(tag)
+                        break
+                    print("wrong tag")
+            return tag_change(tag)
+        count = 0
+        not_dict_type = True
+        if type(corpus) == type({}):
+            if not_dict_type:
+                for k, _ in tqdm(enumerate(corpus["ko_original"])):
+                    # print(key)
+                    ko = corpus["ko_original"][k]
+                    labels = corpus["ner.tags"][k]
+                    # print(labels)
+                    labels = sorted(labels, key=lambda x:x["position"][0])
+                    n = 0
+                    for label in labels:
+                        start = label["position"][0] + n
+                        end = label["position"][1] + n
+                        # print(label["tag"])
+                        tag = tag_change(label["tag"].split("_")[0])
+                        text = label["value"]
+
+                        ko = ko[:start] + "<{}:{}>".format(text, tag) + ko[end:] #<희철이:PER>
+                        n += len("<:{}>".format(tag))
+                    count += 1
+                    data = {
+                        "ko" : corpus["ko_original"][k],
+                        "label" : corpus["ner.tags"][k]
+                    }
+                    uflag, hmap = update_hmap(corpus["ko_original"][k], hmap)
+                    if uflag:
+                        new_corpus.append({"train_bert" : corpus["ko_original"][k]+split+ko, "data" : data})
+                print("sentence : {} from {}".format(count, len(corpus["ko_original"])))
+                return new_corpus, no_tag_hmap, hmap
+            else:
+                for k in tqdm(corpus["ko_original"]):
+                    k = int(list(k.keys())[0])
+                    # print(key)
+                    ko = list(corpus["ko_original"][k].values())[0]
+                    labels = list(corpus["ner.tags"][k].values())[0]
+                    # print(labels)
+                    labels = sorted(labels, key=lambda x:x["position"][0])
+                    n = 0
+                    for label in labels:
+                        start = label["position"][0] + n
+                        end = label["position"][1] + n
+                        # print(label["tag"])
+                        tag = tag_change(label["tag"].split("_")[0])
+                        text = label["value"]
+
+                        ko = ko[:start] + "<{}:{}>".format(text, tag) + ko[end:] #<희철이:PER>
+                        n += len("<:{}>".format(tag))
+                    count += 1
+                    data = {
+                        "ko" : list(corpus["ko_original"][k].values())[0],
+                        "label" : list(corpus["ner.tags"][k].values())[0]
+                    }
+                    uflag, hmap = update_hmap(list(corpus["ko_original"][k].values())[0], hmap)
+                    if uflag:
+                        new_corpus.append({"train_bert" : list(corpus["ko_original"][k].values())[0]+split+ko, "data" : data})
+                print("sentence : {} from {}".format(count, len(corpus["ko_original"])))
+                return new_corpus, no_tag_hmap, hmap
+        else:
+            for data in tqdm(corpus):
+                if data.get("label"):
+                    labels = sorted(data["label"], key=lambda x:x["start"])
+                    ko = data["ko"]
+                    n = 0
+                    for i, label in enumerate(labels):
+                        start = label["start"] + n
+                        end = label["end"] + n
+                        text = label.get("text")
+                        if not text:
+                            print("no_text_error\n--c to continue\n--or write new text")
+                            print(ko)
+                            print(label)
+                            text = input("\tnew_text : ")
+                            if text == "c" or text == "C":
+                                continue
+                            labels[i]["text"] = text
+                        tag = label.get("labels")
+                        if tag: tag = tag[0]
+                        if not tag:
+                            if no_tag_hmap.get(hash(text)):
+                                tag = no_tag_hmap[hash(text)]
+                            else:
+                                print(" {}".format(ko))
+                                print("{}".format(label))
+                                print("no_tag_error\n--c to continue\n--or write new tag")
+                                tag = input("\tnew_tag : ")
+                                if tag == "c" or tag == "C":
+                                    continue
+                                no_tag_hmap[hash(text)] = tag
+                                with open("tagging/no_tag_hmap.json", "w", encoding="utf-8") as file:
+                                    json.dump(no_tag_hmap, file)
+                            labels[i]["labels"] = [tag]
+                        tag = tag_change(tag)
+                        ko = ko[:start] + "<{}:{}>".format(text, tag) + ko[end:] #<희철이:PER>
+                        n += len("<:{}>".format(tag))
+                    if data["ko"].split() == ko.split():
+                        continue
+                    uflag, hmap = update_hmap(data["ko"], hmap)
+                    if uflag:
+                        count += 1
+                        new_corpus.append({"train_bert" : data["ko"]+split+ko, "data" : data})
+                else: continue
+            print("sentence : {} from {}".format(count, len(corpus)))
+            with open("tagging/no_tag_hmap.json", "w", encoding="utf-8") as file:
+                json.dump(no_tag_hmap, file, indent=2, ensure_ascii=False)
+            return new_corpus, no_tag_hmap, hmap
+    out_corpus = []
+    log = 0
+    for dir in dirs:
+        nc, no_tag_hmap, hmap = to_train_bert_labelstudio(dir, no_tag_hmap, hmap)
+        out_corpus += nc
+        log += 1
+        print("done {} out of {}".format(log, len(dirs)))
+    print(len(out_corpus))
+    print("saving whole data to {}. . .".format(output_dir))
+    with open(output_dir, "w", encoding="utf-8") as file:
+        json.dump([out["data"] for out in out_corpus], file, indent=2, ensure_ascii=False)
+        
+    import random
+    random.shuffle(out_corpus)
+    print("saving {} sentences to val.txt., val.json".format(len(out_corpus)//10*1))
+    with open("./tagging/{}/val.txt".format(sub_dir), "w", encoding="utf-8") as file:
+        txt_lines = [out["train_bert"] for out in out_corpus[:len(out_corpus)//10*1]]
+        for i, line in tqdm(enumerate(txt_lines)):
+            file.write(line + "\n" if i < len(txt_lines)-1 else line)
+    with open("./tagging/{}/val.json".format(sub_dir), "w", encoding="utf-8") as file:
+        json.dump([out["data"] for out in out_corpus[:len(out_corpus)//10*1]], file, indent=2, ensure_ascii=False)
+
+    print("saving {} sentences to test.txt., test.json".format(len(out_corpus)//10*2 - len(out_corpus)//10*1))
+    with open("./tagging/{}/test.txt".format(sub_dir), "w", encoding="utf-8") as file:
+        txt_lines = [out["train_bert"] for out in out_corpus[len(out_corpus)//10*2:len(out_corpus)//10*1]]
+        for i, line in tqdm(enumerate(txt_lines)):
+            file.write(line + "\n" if i < len(txt_lines)-1 else line)
+    with open("./tagging/{}/test.json".format(sub_dir), "w", encoding="utf-8") as file:
+        json.dump([out["data"] for out in out_corpus[len(out_corpus)//10*1:len(out_corpus)//10*2]], file, indent=2, ensure_ascii=False)
+
+    print("saving {} sentences to train.txt., train.json".format(len(out_corpus) - len(out_corpus)//10*2))
+    with open("./tagging/{}/train.txt".format(sub_dir), "w", encoding="utf-8") as file:
+        txt_lines = [out["train_bert"] for out in out_corpus[len(out_corpus)//10*2:]]
+        for i, line in tqdm(enumerate(txt_lines)):
+            file.write(line + "\n" if i < len(txt_lines)-1 else line)
+    with open("./tagging/{}/train.json".format(sub_dir), "w", encoding="utf-8") as file:
+        json.dump([out["data"] for out in out_corpus[len(out_corpus)//10*2:]], file, indent=2, ensure_ascii=False)
+
+    print("done")
+    
+
 def to_train_bert(corpus_dir : Path, mode : str):
     df = pd.read_csv(corpus_dir, sep=',')
     lines = []
@@ -898,9 +1114,9 @@ if __name__ == "__main__":
     # with open("new_corpus/{}_no_special_221114.json",'r', encoding='utf-8') as j_file:
     #     j_dict = json.load(j_file)
     #     f = j_dict['ko_original']
-    with open("nersota_corpus_for_pretrain_no_special_2211141633.json",'r', encoding='utf-8') as j_file:
-        j_dict = json.load(j_file)
-        p = j_dict
+    # with open("nersota_corpus_for_pretrain_no_special_2211141633.json",'r', encoding='utf-8') as j_file:
+    #     j_dict = json.load(j_file)
+    #     p = j_dict
     # hmap = {}
     # for fk in tqdm(f):
     #     if hmap.get(hash(fk.strip())):
@@ -916,25 +1132,49 @@ if __name__ == "__main__":
     #     if hmap.get(hash(pk.strip())) == pk.strip():
     #         print("중복! - ", pk)
 
-    m_len = 0
-    n_len = len(p[0])
-    oc = 0
-    new_p = []
-    n = 0
-    for j in tqdm(p):
-        if m_len < len(j):
-            m_len = len(j)
-        if n_len > len(j):
-            n_len = len(j)
-        if len(j) < 512:
-            new_p.append(j)
-        else:
-            oc += 1
-    print(m_len)
-    print(n_len)
-    print(oc)
-    with open("nersota_corpus_for_pretrain_no_special_len_under512_2211141659.json", "w", encoding='utf-8') as outfile:
-        json.dump(new_p, outfile, indent=2, ensure_ascii=False)
+    # m_len = 0
+    # n_len = len(p[0])
+    # oc = 0
+    # new_p = []
+    # n = 0
+    # for j in tqdm(p):
+    #     if m_len < len(j):
+    #         m_len = len(j)
+    #     if n_len > len(j):
+    #         n_len = len(j)
+    #     if len(j) < 512:
+    #         new_p.append(j)
+    #     else:
+    #         oc += 1
+    # print(m_len)
+    # print(n_len)
+    # print(oc)
+    # with open("nersota_corpus_for_pretrain_no_special_len_under512_2211141659.json", "w", encoding='utf-8') as outfile:
+    #     json.dump(new_p, outfile, indent=2, ensure_ascii=False)
+
+    # dir = "./tagging/label_studio/"
+    dir = "./tagging/momal_only/"
+    dirs = [dir + j.name for j in list(os.scandir(dir))]
+    dir = "./tagging/label_studio/"
+    dirs = ['tagging/momal_only/국립국어원s.json']
+    # ldirs = [dir + j.name for j in list(os.scandir(dir))]
+    # dirs = dirs + ldirs
+    # dirs = []
+    # for j in list(os.scandir(dir)):
+    #     if j.name[-9:-5] != "test":
+    #         dirs.append(dir + j.name)
+    #     else:
+    #         continue
+    pprint.pprint(dirs)
+    print("total {} dataset".format(len(dirs)))
+    
+    # print(list(os.scandir("./tagging/label_studio")))
+    to_train_bert_labelstudio_concat(dirs, "tagging/mo_s/finetuning_momallabel_1214.json")
+    # import json
+    # dir = "./tagging/1214_lamo/finetuning_momallabel_1214.json"
+    # with open(dir, "r", encoding='utf-8') as file:
+    #     j = json.load(file)
+    # print(len(j))
     # no_overlap()
     # corpus_dir = "corpus/157.방송 콘텐츠 한-중, 한-일 번역 병렬 말뭉치 데이터"
     # corpus_dir = 'corpus/NIKL_SPOKEN_v1.2/국립국어원 구어 말뭉치(버전 1.2)'

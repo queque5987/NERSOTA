@@ -85,15 +85,15 @@ def train():
         pretrained_model_name="beomi/kcbert-base",
         downstream_corpus_name="ner",
         downstream_model_dir="/nlpbook/checkpoint-ner",
-        batch_size=32 if torch.cuda.is_available() else 4,
+        batch_size=1,# if torch.cuda.is_available() else 4,
         learning_rate=1e-5,
         max_seq_length=64,
-        epochs=12, 
+        epochs=1, 
         tpu_cores=0 if torch.cuda.is_available() else 8,
         seed=7,
         downstream_corpus_root_dir="",
         cpu_workers=0,
-        save_top_k = 10
+        save_top_k = 1
     )
     from ratsnlp import nlpbook
     nlpbook.set_seed(args)

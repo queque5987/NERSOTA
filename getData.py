@@ -52,6 +52,10 @@ def dataset_NIKL_NEv1():
 
     print("done")
 
+def label_studio_count(dir):
+    with open(dir, "r", encoding = 'utf-8') as file:
+        d_json = json.load(file)
+
 if __name__ == "__main__":
-    dataset_xlm()
+    # dataset_xlm()
     # dataset_NIKL_NEv1()

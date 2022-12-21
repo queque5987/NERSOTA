@@ -43,6 +43,88 @@ label_map = [
     'I-MAT'
     ]
 
+
+def BIO_labelstudio(file_dir, out_dir):
+    import json
+    label_map = {
+     'PER' : ['PERSON', 'PS'],
+     'STF' : ['FD', 'STUDY_FIELD'],
+     'THR' : ['TR', 'THEORY'],
+     'ARF' : ['AF', 'AFA', 'WORK_OF_ART', 'AFW', 'PRODUCT', 'ARTIFACTS', 'WORK', 'ARRIFACTS'],
+     'ORG' : ['OGG', 'ORG', 'ORGANIZATION'],
+     'CVL' : ['CV', 'CIVILIZATION'],
+     'LOC' : ['LC','LCG', 'LCP', 'LOCATION'],
+     'DAT' : ['DT', 'DATE'],
+     'TIM' : ['TI', 'TIME'],
+     'QTT' : ['QT', 'QUANTITY'],
+     'EVT' : ['EV', 'EVENT'],
+     'ANM' : ['AM', 'ANIMAL'],
+     'PLT' : ['PT', 'PLANT'],
+     'MAT' : ['MT', 'MATERIAL'],
+     'TRM' : ['TM','TMI', 'TMIG', 'TMM', 'TERM']
+    }
+
+    with open(file_dir, "r", encoding="utf-8") as file:
+        corpus = json.load(file)
+    new_data = []
+    for data in tqdm(corpus):
+        ko = data["ko"]
+        ko = [k for k in ko]
+        for label in data["label"]:
+            if data.get("sn"):
+                start = label["start"]
+                end = label["end"]
+                # text = label["text"]
+                tag = label.get("labels")
+                if tag: tag = tag[0]
+                else:
+                    print("cannot find label")
+                    print(data["ko"])
+                    print(label)
+                    tag = input("new_label : ")
+                    if tag == "C" or tag == "c":
+                        continue
+            else:
+                start = label["position"][0]
+                end = label["position"][1]
+                # text = label["value"]
+                tag = label["tag"].split("_")[0]
+            flag = False
+            for k, v in label_map.items():
+                if tag in v:
+                    tag = k
+                    flag = True
+            if not flag:
+                print("cannot find tag : {}".format(tag))
+                old_tag = tag
+                tag = input("new_tag : ")
+                label_map[tag].append(old_tag)
+                print("label_map : {} added to {}".format(old_tag, tag))
+            # print(start, end)
+            for i in range(start, end):
+                try:
+                    if i == start: ko[i] = "B-" + tag
+                    else: ko[i] = "I-" + tag
+                except IndexError as e:
+                    print(e)
+                    print(ko)
+                    print(data["ko"])
+                    print(start, end)
+                    print(label)
+                    ko = ["O" for k in ko]
+                    break
+        # print(ko)
+        ko = [k if len(k) > 1 and k.split("-")[1] in label_map.keys() else "O" for k in ko]
+        new_data.append({"data" : data, "output" : ko})
+        # print(ko)
+        # print("-----")
+        
+        
+    with open(out_dir, "w", encoding="utf-8") as file:
+        json.dump(new_data, file, indent=2, ensure_ascii=False)
+    print('done')
+            
+
 def BIO_corpus(file_dir, result_file_dir):
     result = Path(file_dir)
     df = pd.read_csv(result)
@@ -107,6 +189,311 @@ def BIO_xlmr(file_dir, result_file_dir):
                 else: new_output[j] = "I-{}".format(tag['entity'])
         df.loc[i, 'ner'] = str(new_output)
     df.to_csv('{}'.format(result_file_dir))
+    print('done')
+def BIO_roberta_json(file_dir, result_file_dir): #[{'token': '세', 'predicted_tag': 'B-PER', 'top_prob': '0.9992'}, {'token': '##찬', 'predicted_tag': 'I-PER', 'top_prob': '0.9994'}, {'token': '##이', 'predicted_tag': 'I-PER', 'top_prob': '0.9557'}, {'token': '##인가', 'predicted_tag': 'O', 'top_prob': '0.9939'}, {'token': '봐', 'predicted_tag': 'O', 'top_prob': '0.9999'}, {'token': '.', 'predicted_tag': 'O', 'top_prob': '0.9999'}]
+    result = Path(file_dir)
+    import json
+    with open(result, "r", encoding="utf-8") as file:
+        df = json.load(file)
+    label_map = [
+    '[CLS]',
+    '[SEP]',
+    '[PAD]',
+    '[MASK]',
+    'O',
+    'B-PER',
+    'B-ARF',
+    'B-ORG',
+    'B-DAT',
+    'B-ANM',
+    'B-CVL',
+    'B-THR',
+    'B-LOC',
+    'B-QTT',
+    'B-TRM',
+    'B-STF',
+    'B-TIM',
+    'B-PLT',
+    'B-EVT',
+    'B-MAT',
+    'I-PER',
+    'I-ARF',
+    'I-ORG',
+    'I-DAT',
+    'I-ANM',
+    'I-CVL',
+    'I-THR',
+    'I-LOC',
+    'I-QTT',
+    'I-TRM',
+    'I-STF',
+    'I-TIM',
+    'I-PLT',
+    'I-EVT',
+    'I-MAT',
+    'I-WOA',
+    'B-WOA',
+    'I-PRD',
+    'B-PRD'
+    ]
+    label_map = [
+    '[CLS]',
+    '[SEP]',
+    '[PAD]',
+    '[MASK]',
+    'O',
+    'PER-B',
+    'FLD-B',
+    'AFW-B',
+    'ORG-B',
+    'LOC-B',
+    'CVL-B',
+    'DAT-B',
+    'TIM-B',
+    'NUM-B',
+    'EVT-B',
+    'ANM-B',
+    'PLT-B',
+    'MAT-B',
+    'TRM-B',
+    'PER-I',
+    'FLD-I',
+    'AFW-I',
+    'ORG-I',
+    'LOC-I',
+    'CVL-I',
+    'DAT-I',
+    'TIM-I',
+    'NUM-I',
+    'EVT-I',
+    'ANM-I',
+    'PLT-I',
+    'MAT-I',
+    'TRM-I'
+    ]
+    label_map = [
+        "O",
+        "B-PER",
+        "B-PRD",
+        "B-ORG", 
+        "B-WOA", 
+        "I-PER",
+        "I-PRD",
+        "I-ORG",
+        "I-WOA"
+    ]
+    aaa = 0
+    ndf = []
+    def replace_list(new_sentence, token, predicted_tag):
+        flag = False
+        for token_idx, t in enumerate(token):
+            for i, s in enumerate(new_sentence):
+                if t == s:
+                    if token_idx > 0 and predicted_tag[0] == "B":
+                        new_sentence[i] = "I" + predicted_tag[1:]
+                    else: new_sentence[i] = predicted_tag
+                    flag = True
+                    break
+        if not flag: print("error ", new_sentence, token)
+        return new_sentence, flag
+    for data_idx, data in tqdm(enumerate(df)):
+        sentence = data['sentence']
+        result = data['result']
+        new_sentence = [s for s in sentence]
+        tags = []
+        n = 0
+        for i, re in enumerate(result): 
+            token = re['token']
+            predicted_tag = re['predicted_tag']
+            token = token.replace("##", "")
+            if token == "[UNK]": #, "[SEP]", "[CLS]", "[PAD]", "[MASK]"]:
+                token = ">"
+            new_sentence, flag = replace_list(new_sentence, token, predicted_tag)
+        
+        for sen_idx, s in enumerate(new_sentence):
+            if s not in label_map:
+                if s == " ":
+                    if new_sentence[sen_idx+1][0] == "I":
+                        new_sentence[sen_idx] = new_sentence[sen_idx+1]
+                    else: new_sentence[sen_idx] = "O"
+                else:
+                    new_sentence[sen_idx] = "O"
+                    # print("error 000\t", new_sentence)
+
+        ndf.append({"sentence" : sentence, "result" : result, "output" : new_sentence})
+    with open(result_file_dir, "w", encoding="utf-8") as file:
+        json.dump(ndf, file, indent=2, ensure_ascii=False)
+    print('done')
+def BIO_bert_json(file_dir, result_file_dir): #[{'token': '세', 'predicted_tag': 'B-PER', 'top_prob': '0.9992'}, {'token': '##찬', 'predicted_tag': 'I-PER', 'top_prob': '0.9994'}, {'token': '##이', 'predicted_tag': 'I-PER', 'top_prob': '0.9557'}, {'token': '##인가', 'predicted_tag': 'O', 'top_prob': '0.9939'}, {'token': '봐', 'predicted_tag': 'O', 'top_prob': '0.9999'}, {'token': '.', 'predicted_tag': 'O', 'top_prob': '0.9999'}]
+    result = Path(file_dir)
+    import json
+    with open(result, "r", encoding="utf-8") as file:
+        df = json.load(file)
+    # label_map = [
+    # '[CLS]',
+    # '[SEP]',
+    # '[PAD]',
+    # '[MASK]',
+    # 'O',
+    # 'B-PER',
+    # 'B-ARF',
+    # 'B-ORG',
+    # 'B-DAT',
+    # 'B-ANM',
+    # 'B-CVL',
+    # 'B-THR',
+    # 'B-LOC',
+    # 'B-QTT',
+    # 'B-TRM',
+    # 'B-STF',
+    # 'B-TIM',
+    # 'B-PLT',
+    # 'B-EVT',
+    # 'B-MAT',
+    # 'I-PER',
+    # 'I-ARF',
+    # 'I-ORG',
+    # 'I-DAT',
+    # 'I-ANM',
+    # 'I-CVL',
+    # 'I-THR',
+    # 'I-LOC',
+    # 'I-QTT',
+    # 'I-TRM',
+    # 'I-STF',
+    # 'I-TIM',
+    # 'I-PLT',
+    # 'I-EVT',
+    # 'I-MAT',
+    # 'I-WOA',
+    # 'B-WOA',
+    # 'I-PRD',
+    # 'B-PRD'
+    # ]
+    label_map = [
+    # '[CLS]',
+    # '[SEP]',
+    # '[PAD]',
+    # '[MASK]',
+    'O',
+    'B-PER',
+    'B-CVL',
+    'B-DAT',
+    'B-QTT',
+    'B-THR',
+    'B-ANM',
+    'B-ORG',
+    'B-TRM',
+    'B-STF',
+    'B-ARF',
+    'B-LOC',
+    'B-TIM',
+    'B-MAT',
+    'B-PLT',
+    'B-EVT',
+    'I-PER',
+    'I-CVL',
+    'I-DAT',
+    'I-QTT',
+    'I-THR',
+    'I-ANM',
+    'I-ORG',
+    'I-TRM',
+    'I-STF',
+    'I-ARF',
+    'I-LOC',
+    'I-TIM',
+    'I-MAT',
+    'I-PLT',
+    'I-EVT',
+    ]
+    # label_map = [
+    # '[CLS]',
+    # '[SEP]',
+    # '[PAD]',
+    # '[MASK]',
+    # 'O',
+    # 'PER-B',
+    # 'FLD-B',
+    # 'AFW-B',
+    # 'ORG-B',
+    # 'LOC-B',
+    # 'CVL-B',
+    # 'DAT-B',
+    # 'TIM-B',
+    # 'NUM-B',
+    # 'EVT-B',
+    # 'ANM-B',
+    # 'PLT-B',
+    # 'MAT-B',
+    # 'TRM-B',
+    # 'PER-I',
+    # 'FLD-I',
+    # 'AFW-I',
+    # 'ORG-I',
+    # 'LOC-I',
+    # 'CVL-I',
+    # 'DAT-I',
+    # 'TIM-I',
+    # 'NUM-I',
+    # 'EVT-I',
+    # 'ANM-I',
+    # 'PLT-I',
+    # 'MAT-I',
+    # 'TRM-I'
+    # ]
+    # label_map = [
+    #     "O",
+    #     "B-PER",
+    #     "B-PRD",
+    #     "B-ORG", 
+    #     "B-WOA", 
+    #     "I-PER",
+    #     "I-PRD",
+    #     "I-ORG",
+    #     "I-WOA"
+    # ]
+    aaa = 0
+    ndf = []
+    def replace_list(new_sentence, token, predicted_tag):
+        flag = False
+        for token_idx, t in enumerate(token):
+            for i, s in enumerate(new_sentence):
+                if t == s:
+                    if token_idx > 0 and predicted_tag[0] == "B":
+                        new_sentence[i] = "I" + predicted_tag[1:]
+                    else: new_sentence[i] = predicted_tag
+                    flag = True
+                    break
+        if not flag: print("error ", new_sentence, token)
+        return new_sentence, flag
+    for data_idx, data in tqdm(enumerate(df)):
+        sentence = data['sentence']
+        result = data['result']
+        new_sentence = [s for s in sentence]
+        tags = []
+        n = 0
+        for i, re in enumerate(result): 
+            token = re['token']
+            predicted_tag = re['predicted_tag']
+            token = token.replace("##", "")
+            if token == "[UNK]": #, "[SEP]", "[CLS]", "[PAD]", "[MASK]"]:
+                token = ">"
+            new_sentence, flag = replace_list(new_sentence, token, predicted_tag)
+        
+        for sen_idx, s in enumerate(new_sentence):
+            if s not in label_map:
+                if s == " ":
+                    if new_sentence[sen_idx+1][0] == "I":
+                        new_sentence[sen_idx] = new_sentence[sen_idx+1]
+                    else: new_sentence[sen_idx] = "O"
+                else:
+                    new_sentence[sen_idx] = "O"
+                    # print("error 000\t", new_sentence)
+
+        ndf.append({"sentence" : sentence, "result" : result, "output" : new_sentence})
+    with open(result_file_dir, "w", encoding="utf-8") as file:
+        json.dump(ndf, file, indent=2, ensure_ascii=False)
     print('done')
 
 def BIO_kcbert(file_dir, result_file_dir): #[{'token': '세', 'predicted_tag': 'B-PER', 'top_prob': '0.9992'}, {'token': '##찬', 'predicted_tag': 'I-PER', 'top_prob': '0.9994'}, {'token': '##이', 'predicted_tag': 'I-PER', 'top_prob': '0.9557'}, {'token': '##인가', 'predicted_tag': 'O', 'top_prob': '0.9939'}, {'token': '봐', 'predicted_tag': 'O', 'top_prob': '0.9999'}, {'token': '.', 'predicted_tag': 'O', 'top_prob': '0.9999'}]
@@ -314,39 +701,98 @@ def BIO_corpus_token(file_dir, result_file_dir): #"'본 제품은 한국의료�
     new_df = pd.DataFrame(new_df)
     new_df.to_csv('{}'.format(result_file_dir))
 
-def getScores(p_dir, y_dir):
+def getScores(p_dir, y_dir, is_p_json = True, is_y_json = True):
     import numpy as np
     import sklearn.metrics as metrics
+    import json
 
-    p = pd.read_csv(p_dir)
-    y = pd.read_csv(y_dir)
-    # p = p['ner'].values.tolist()
-    p = p['output'].values.tolist()
-    y = y['output'].values.tolist()
-    p_new = []
-    for pp in p:
-        for ppp in eval(pp):
-            p_new.append(ppp)
-            # if ppp not in label_map:
-                # print(pp)
+    label_map = {"B-PER" : "B-QTT",
+    "B-CVL" : "B-ARF",
+    "B-DAT" : "B-PER",
+    "B-QTT" : "B-TRM",
+    "B-THR" : "B-CVL",
+    "B-ANM" : "B-EVT",
+    "B-ORG" : "B-ORG",
+    "B-TRM" : "B-DAT",
+    "B-STF" : "B-LOC",
+    'B-ARF' : "B-THR",
+    'B-LOC' : "B-ANM",
+    'B-TIM' : "B-MAT",
+    'B-MAT' : "B-TIM",
+    'B-PLT' : "B-PLT",
+    'B-EVT' : "B-STF",
+    'I-PER' : "I-QTT",
+    'I-CVL' : "I-ARF",
+    'I-DAT' : "I-PER",
+    'I-QTT' : "I-TRM",
+    'I-THR' : "I-CVL",
+    'I-ANM' : "I-EVT",
+    'I-ORG' : "I-ORG",
+    'I-TRM' : "I-DAT",
+    'I-STF' : "I-LOC",
+    'I-ARF' : "I-THR",
+    'I-LOC' : "I-ANM",
+    'I-TIM' : "I-MAT",
+    'I-MAT' : "I-TIM",
+    'I-PLT' : "I-PLT",
+    'I-EVT' : "I-STF",
+    "O" : "O"
+    }
+    labels = []
+    if is_p_json:
+        with open(p_dir, "r", encoding="utf-8") as file:
+            p = json.load(file)
+        p = [i['output'] for i in p]
+        p_new = []
+        for pp in p:
+            for ppp in pp:
+                # p_new.append(label_map[ppp] if label_map[ppp] == "O" else label_map[ppp].split("-")[1])
+                p_new.append(ppp if ppp == "O" else ppp.split("-")[1])
+                if ppp != "O" and ppp.split("-")[1] not in labels:
+                    labels.append(ppp.split("-")[1])
+                # p_new.append(ppp)
+    else:
+        p = pd.read_csv(p_dir)
+        p = p['output'].values.tolist()
+        p_new = []
+        for pp in p:
+            for ppp in eval(pp):
+                p_new.append(ppp)
+    if is_y_json:
+        with open(y_dir, "r", encoding="utf-8") as file:
+            y = json.load(file)
+        y = [i['output'] for i in y]
+        y_new = []
+        for pp in y:
+            for ppp in pp:
+                y_new.append(ppp if ppp == "O" else ppp.split("-")[1])
+                # y_new.append(ppp)
+    else:
+        y = pd.read_csv(y_dir)
+        y = y['output'].values.tolist()
+        y_new = []
+        for pp in y:
+            for ppp in eval(pp):
+                y_new.append(ppp)
     
-    y_new = []
-    for pp in y:
-        for ppp in eval(pp):
-            y_new.append(ppp)
-            # if ppp not in label_map:
-                # print(ppp)
+    
     p = p_new
     y = y_new
-    print('model : {}'.format('KcBert'))
-    print('learning rate : 0.00005, epoch : 3, batch_size : 32, val_loss : 0.06')
+    print('model : {}'.format('roberta-base CSE tokenizer'))
+    # print('model : {}'.format('roberta-base trained BPE tokenizer'))
+    # print('model : {}'.format('bert-base_t_KcBERT_mos'))
+    # print('model : {}'.format('KcBERT'))
+    # print('lr=1e-5\titer4750000')
+    # print('lr=1e-5\tepoch=6\tval_loss=0.18')
+    # print('lr=1e-5\tepoch=6\tval_loss=0.18')
+    # print('learning rate : 0.00005, epoch : 3, batch_size : 32, val_loss : 0.06')
     print('accuracy', metrics.accuracy_score(y,p))
     print('precision', metrics.precision_score(y,p,average='micro'))
     print('recall', metrics.recall_score(y,p,average='micro'))
     print('f1 micro', metrics.f1_score(y,p,average='micro'))
     print('f1 macro', metrics.f1_score(y,p,average='macro'))
 
-    print(metrics.classification_report(y,p,zero_division=True))
+    print(metrics.classification_report(y,p,labels = labels,zero_division=True))
     # print(metrics.confusion_matrix(y,p))
 if __name__ == "__main__":
     # BIO_corpus('new_corpus/new_corpus_no_overlap_no_drop_test_data_4_1109.csv', 'new_corpus/new_corpus_no_overlap_no_drop_test_data_4_1109_BIO.csv')
@@ -354,7 +800,17 @@ if __name__ == "__main__":
     # BIO_xlmr("corpus/output_test_letr_API_no_cardinal.csv", "output_test_letr_API_no_cardinal.csv_renewed.csv")
     # BIO_spacy("output_test_spcay.csv", "output_test_spcay_renewed.csv")
     # BIO_corpus_token("corpus/new_corpus_no_overlap_no_drop_spacy221027.csv", "corpus/new_corpus_no_overlap_no_drop_spacy221027_special_test_0.1_BIO.csv")
-    
-    getScores("output_kc_bert_epoch=2-val_loss=0.06_1109.csv", "corpus/new_corpus_no_overlap_no_drop_train_data_4_1109.csv")
-    # getScores("output_test_letr_API_no_cardinal.csv_renewed.csv", "corpus/new_corpus_no_overlap_no_drop_letr221028.csv_bio.csv")
+
+    # BIO_labelstudio("./tagging/test.json","./tagging/ntest_BIO.json")
+    name = "old_Roberta_mos_16617"
+    # BIO_bert_json(name + ".json", name + "_BIO.json")
+    # edit_label_map(name+".json")
+
+    # getScores("output_kc_bert_epoch=2-val_loss=0.06_1109.csv", "corpus/new_corpus_no_overlap_no_drop_train_data_4_1109.csv")
+    # getScores("roberta_KoSimCSE_23024_BIO.json", "new_corpus_no_overlap_no_drop_test_data_4_1109_BIO.csv", is_y_json=False)
     # getScores("output_test_xlm-roberta-large-finetuned-conll03-english_renewed.csv", 'corpus/new_corpus_no_overlap_no_drop_xlmr_test_0.1_BIO_221026.csv')
+    # getScores("roberta_base_t_trainedbpe_ep7_33049_BIO.json", "./tagging/test_BIO.json")
+    # getScores(name + "_BIO.json", "./tagging/test_BIO.json")
+    getScores(name + "_BIO.json", "./tagging/Dataset_H_mo_s/test_BIO.json")
+    # getScores("bert_base_kcbert_23024_BIO.json", "./tagging/Dataset_H_mo_s/test_BIO.json")
+    
