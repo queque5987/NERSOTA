@@ -5,6 +5,7 @@ import argparse
 import os
 import json
 import gc
+import data_utils as utils
 
 def train(kwargs):
     if kwargs.use_trained_tokenizer:
@@ -44,23 +45,18 @@ def train(kwargs):
         for i in range(inputs.input_ids.shape[0]):
             inputs.input_ids[i, selection[i]] = 103
         return inputs
-    
-    def gdownload(file_id, output_name):
-        import gdown
-        google_path = 'https://drive.google.com/uc?id='
-        gdown.download(google_path+file_id,output_name,quiet=False)
 
     print("loading datasets . . .")
     if not os.path.isdir("./dataset"):
         os.mkdir("./dataset")
     if not os.path.isfile("./dataset/pretrain_train.json"):
         print("downloading train_dataset . . .")
-        gdownload(file_id = '1l4MSKZLAimj2qgSlEUl-soLfPpvrhHtm', output_name = './dataset/pretrain_train.json')
+        utils.gdownload(file_id = '1l4MSKZLAimj2qgSlEUl-soLfPpvrhHtm', output_name = './dataset/pretrain_train.json')
     else:
         print("train_dataset already exists")
     if not os.path.isfile("./dataset/pretrain_eval.json"):
         print("downloading eval_dataset . . .")
-        gdownload(file_id = '1CWGHQ1gtQ49dM-hBVPVcv9WnNoCjsu5q', output_name = './dataset/pretrain_eval.json')
+        utils.gdownload(file_id = '1CWGHQ1gtQ49dM-hBVPVcv9WnNoCjsu5q', output_name = './dataset/pretrain_eval.json')
     else:
         print("eval_dataset already exists")
     train_dir = 'dataset/pretrain_train.json'

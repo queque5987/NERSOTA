@@ -4,6 +4,8 @@ import argparse
 import os
 import json
 import gc
+import data_utils as utils
+
 def train(kwargs):
     tokenizer_name = "beomi/kcbert-base"
     tokenizer = BertTokenizer.from_pretrained(
@@ -37,10 +39,6 @@ def train(kwargs):
         for i in range(inputs.input_ids.shape[0]):
             inputs.input_ids[i, selection[i]] = 103
         return inputs
-    def gdownload(file_id, output_name):
-        import gdown
-        google_path = 'https://drive.google.com/uc?id='
-        gdown.download(google_path+file_id,output_name,quiet=False)
 
     if not kwargs.on_memory:
         print("loading datasets . . .")
@@ -48,12 +46,12 @@ def train(kwargs):
             os.mkdir("./dataset")
         if not os.path.isfile("./dataset/pretrain_train.json"):
             print("downloading train_dataset . . .")
-            gdownload(file_id = '1l4MSKZLAimj2qgSlEUl-soLfPpvrhHtm', output_name = './dataset/pretrain_train.json')
+            utils.gdownload(file_id = '1l4MSKZLAimj2qgSlEUl-soLfPpvrhHtm', output_name = './dataset/pretrain_train.json')
         else:
             print("train_dataset already exists")
         if not os.path.isfile("./dataset/pretrain_eval.json"):
             print("downloading eval_dataset . . .")
-            gdownload(file_id = '1CWGHQ1gtQ49dM-hBVPVcv9WnNoCjsu5q', output_name = './dataset/pretrain_eval.json')
+            utils.gdownload(file_id = '1CWGHQ1gtQ49dM-hBVPVcv9WnNoCjsu5q', output_name = './dataset/pretrain_eval.json')
         else:
             print("eval_dataset already exists")
         train_dir = 'dataset/pretrain_train.json'
@@ -72,10 +70,10 @@ def train(kwargs):
             os.mkdir("./dataset")
         if not os.path.isfile("./dataset/train_dataset_kcbert-base.pt"):
             print("downloading train_dataset . . .")
-            gdownload(file_id = '1XPpZDUgPW6ju8X9XhJZIyTdWpjZNTXQ-', output_name = './dataset/train_dataset_kcbert-base.pt')
+            utils.gdownload(file_id = '1XPpZDUgPW6ju8X9XhJZIyTdWpjZNTXQ-', output_name = './dataset/train_dataset_kcbert-base.pt')
         if not os.path.isfile("./dataset/eval_dataset_kcbert-base.pt"):
             print("downloading eval_dataset . . .")
-            gdownload(file_id = '1Sk-toHPIPD1e5Y1OBTITo--gBHwf1mfi', output_name = './dataset/eval_dataset_kcbert-base.pt')
+            utils.gdownload(file_id = '1Sk-toHPIPD1e5Y1OBTITo--gBHwf1mfi', output_name = './dataset/eval_dataset_kcbert-base.pt')
         print('loading train_dataset . . .')
         train_dataset = torch.load("dataset/train_dataset_kcbert-base.pt")
         print('loading eval_dataset . . .')
