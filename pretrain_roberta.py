@@ -1,157 +1,110 @@
-from tqdm import tqdm
-from transformers import RobertaTokenizer,RobertaConfig, RobertaForMaskedLM, Trainer, TrainingArguments, BatchEncoding
-# from transformers import RobertaTokenizer,RobertaConfig, RobertaForMaskedLM, TrainingArguments, BatchEncoding
+from transformers import RobertaConfig, RobertaForMaskedLM, Trainer, TrainingArguments, BatchEncoding, AutoTokenizer
 import torch
-import json
 from tokenizers import ByteLevelBPETokenizer
-import tokenizers
+import argparse
+import os
+import json
+import gc
 
-# tokenizer = RobertaTokenizer.from_pretrained("roberta-base")
-tokenizer = ByteLevelBPETokenizer(
-    'bpe/vocab.json',
-    'bpe/merges.txt'
-)
-config = RobertaConfig.from_pretrained("roberta-base")
-model = RobertaForMaskedLM(config)
-
-# device = torch.device('cuda:2') if torch.cuda.is_available() else torch.device('cpu')
-device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-"""
-CUDA_VISIBLE_DEVICE=2
-"""
-model.to(device)
-
-class MeditationsDataset(torch.utils.data.Dataset):
-    def __init__(self, encodings):
-        self.encodings = encodings
-    def __getitem__(self, idx):
-        return {key: torch.tensor(val[idx]) for key, val in self.encodings.items()}
-    def __len__(self):
-        return len(self.encodings.input_ids)
-
-def get_dataset(text: list, max_length = 128, mode = "normal"):
-    if mode == "normal":
-        inputs = tokenizer(text, return_tensors='pt', max_length=max_length, truncation=True, padding='max_length')
-    elif mode == "bpe":
-        print("tokenizing data")
-        inputs = [tokenizer.encode(t) for t in text]
-        print("switching data to batchencoding")
-        print(inputs[0].ids)
-        input_ids = []
-        attention_mask = []
-        for input in inputs:
-            input_ids.append((input.ids+[1 for _ in range(max_length-len(input.ids))]) if len(input.ids) <= max_length else input.ids[:max_length])
-            attention_mask.append((input.attention_mask + [0 for _ in range(max_length-len(input.attention_mask))]) if len(input.attention_mask) <= max_length else input.attention_mask[:max_length])
-        inputs = BatchEncoding({"input_ids" : torch.tensor(input_ids), "attention_mask" : torch.tensor(attention_mask)})
-        # inputs = BatchEncoding({"input_ids" : torch.tensor([(input.ids + [1 for _ in range(max_length-len(input.ids))]) if len(input.ids) <= max_length else input.ids[:max_length]] for input in inputs), #.to(device)
-        # "attention_mask" : torch.tensor(
-        #     [(input.attention_mask + [0 for _ in range(max_length-len(input.attention_mask))]) if len(input.attention_mask) <= max_length 
-        #     else input.attention_mask[:max_length]]
-        #         for input in inputs),#.to(device)
-        ### ValueError: expected sequence of length 64 at dim 1 (got 69) 2211181303 len(input.ids >> len(input.attention_mask 2211181335 max_length 64 >> 128 since bpe len(text) != len(bpe(text))
-        ### RuntimeError: [enfore fail at CPUAllocator.cpp:68] . DefaultCPUAllocator: cant'allocate memory: you tried to allocate 5861894400 bytes. Error code 12 (Cannot allocate memory)
-        # "labels" : torch.tensor([input.ids + [1 for _ in range(max_length-len(input.ids))] for input in inputs])
-        # })
-    inputs['labels'] = inputs.input_ids.detach().clone()#.to(device)
-    # create random array of floats with equal dimensions to input_ids tensor
-    rand = torch.rand(inputs.input_ids.shape)#.to(device)
-    # create mask array
-    mask_arr = (rand < 0.15) * (inputs.input_ids != 101) * \
-            (inputs.input_ids != 102) * (inputs.input_ids != 0)
-    # print(mask_arr)
-    selection = []
-    print("selecting tokens to shift")
-    for i in range(inputs.input_ids.shape[0]):
-        selection.append(
-            torch.flatten(mask_arr[i].nonzero()).tolist()
+def train(kwargs):
+    if kwargs.use_trained_tokenizer:
+        tokenizer = ByteLevelBPETokenizer(
+            'bpe/vocab.json',
+            'bpe/merges.txt'
         )
+    else:
+        tokenizer = AutoTokenizer.from_pretrained('BM-K/KoSimCSE-roberta')
+    config = RobertaConfig.from_pretrained("roberta-base")
+    model = RobertaForMaskedLM(config)
 
-    for i in range(inputs.input_ids.shape[0]):
-        inputs.input_ids[i, selection[i]] = 103
-    print("initializing tensors to dataset")
-    dataset = MeditationsDataset(inputs)
-    print("done making dataset")
-    return dataset
+    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+    model.to(device)
 
-def collate_fn(text):
-    max_length = 128
-    # print("tokenizing data")
-    inputs = [tokenizer.encode(t) for t in text]
-    # inputs = tokenizer.encode(text)
-    # input_ids = (inputs.ids+[1 for _ in range(max_length-len(inputs.ids))]) if len(inputs.ids) <= max_length else inputs.ids[:max_length]
-    # attention_mask = (inputs.attention_mask + [0 for _ in range(max_length-len(inputs.attention_mask))]) if len(inputs.attention_mask) <= max_length else inputs.attention_mask[:max_length]
-    input_ids = []
-    attention_mask = []
-    for input in inputs:
-        input_ids.append((input.ids+[1 for _ in range(max_length-len(input.ids))]) if len(input.ids) <= max_length else input.ids[:max_length])
-        attention_mask.append((input.attention_mask + [0 for _ in range(max_length-len(input.attention_mask))]) if len(input.attention_mask) <= max_length else input.attention_mask[:max_length])
-    inputs = BatchEncoding({"input_ids" : torch.tensor(input_ids), "attention_mask" : torch.tensor(attention_mask)})
-    inputs['labels'] = inputs.input_ids.detach().clone()#.to(device)
-    # create random array of floats with equal dimensions to input_ids tensor
-    rand = torch.rand(inputs.input_ids.shape)#.to(device)
-    # create mask array
-    mask_arr = (rand < 0.15) * (inputs.input_ids != 101) * \
-            (inputs.input_ids != 102) * (inputs.input_ids != 0)
-    # print(mask_arr)
-    selection = []
-    # print("selecting tokens to shift")
-    for i in range(inputs.input_ids.shape[0]):
-        selection.append(
-            torch.flatten(mask_arr[i].nonzero()).tolist()
-        )
+    def collate_fn(text):
+        max_length = kwargs.max_length
+        if kwargs.use_trained_tokenizer:
+            inputs = [tokenizer.encode(t) for t in text]
+            input_ids = []
+            attention_mask = []
+            for input in inputs:
+                input_ids.append((input.ids+[1 for _ in range(max_length-len(input.ids))]) if len(input.ids) <= max_length else input.ids[:max_length])
+                attention_mask.append((input.attention_mask + [0 for _ in range(max_length-len(input.attention_mask))]) if len(input.attention_mask) <= max_length else input.attention_mask[:max_length])
+            inputs = BatchEncoding({"input_ids" : torch.tensor(input_ids), "attention_mask" : torch.tensor(attention_mask)})
+        else: 
+            inputs = tokenizer(text, return_tensors='pt', max_length=max_length, truncation=True, padding='max_length')
+        inputs['labels'] = inputs.input_ids.detach().clone()
+        rand = torch.rand(inputs.input_ids.shape)
+        mask_arr = (rand < 0.15) * (inputs.input_ids != 101) * \
+                (inputs.input_ids != 102) * (inputs.input_ids != 0)
+        selection = []
+        for i in range(inputs.input_ids.shape[0]):
+            selection.append(
+                torch.flatten(mask_arr[i].nonzero()).tolist()
+            )
+        for i in range(inputs.input_ids.shape[0]):
+            inputs.input_ids[i, selection[i]] = 103
+        return inputs
+    
+    def gdownload(file_id, output_name):
+        import gdown
+        google_path = 'https://drive.google.com/uc?id='
+        gdown.download(google_path+file_id,output_name,quiet=False)
 
-    for i in range(inputs.input_ids.shape[0]):
-        inputs.input_ids[i, selection[i]] = 103
-    # print("initializing tensors to dataset")
-    # dataset = MeditationsDataset(inputs)
-    # print("done making dataset")
-    return inputs
+    print("loading datasets . . .")
+    if not os.path.isdir("./dataset"):
+        os.mkdir("./dataset")
+    if not os.path.isfile("./dataset/pretrain_train.json"):
+        print("downloading train_dataset . . .")
+        gdownload(file_id = '1l4MSKZLAimj2qgSlEUl-soLfPpvrhHtm', output_name = './dataset/pretrain_train.json')
+    else:
+        print("train_dataset already exists")
+    if not os.path.isfile("./dataset/pretrain_eval.json"):
+        print("downloading eval_dataset . . .")
+        gdownload(file_id = '1CWGHQ1gtQ49dM-hBVPVcv9WnNoCjsu5q', output_name = './dataset/pretrain_eval.json')
+    else:
+        print("eval_dataset already exists")
+    train_dir = 'dataset/pretrain_train.json'
+    eval_dir = 'dataset/pretrain_eval.json'
+    print("loading datasets . . .")
+    with open(train_dir, 'r', encoding='utf-8') as j_file:
+        train_data = json.load(j_file)
+    with open(eval_dir, 'r', encoding='utf-8') as j_file:
+        eval_data = json.load(j_file)
+    print(train_data[0])
+    print("dataset loaded")
 
-train_dir = 'dataset/nersota_corpus_for_pretrain_no_special_len_under64_2211141659.json_train_0.05.json'
-eval_dir = 'dataset/nersota_corpus_for_pretrain_no_special_len_under64_2211141659.json_eval_0.05.json'
-mode = "bpe"
-print("loading data")
-with open(train_dir, 'r', encoding='utf-8') as j_file:
-    train_data = json.load(j_file)
-with open(eval_dir, 'r', encoding='utf-8') as j_file:
-    eval_data = json.load(j_file)
-# print(type(train_data[0]))
-print("gathering dataset")
-# train_dataset = get_dataset(train_data, mode=mode)
-# train_dataset = get_dataset(train_data[:len(train_data)//2], mode=mode)
-# eval_dataset = get_dataset(eval_data, mode=mode)
+    args = TrainingArguments(
+        output_dir="./" + kwargs.model_name,
+        per_device_train_batch_size=kwargs.batch_size,
+        per_device_eval_batch_size=kwargs.batch_size,
+        num_train_epochs=kwargs.epochs,
+        evaluation_strategy="steps",
+        eval_steps=kwargs.eval_steps,
+        save_strategy="steps",
+        save_steps=kwargs.save_steps
+    )
 
-# from torch.utils.data import DataLoader
-# batch_size = 8
-# train_dataloader = DataLoader(train_data, batch_size=batch_size, collate_fn=collate_fn)
-# eval_dataloader = DataLoader(train_data, batch_size=batch_size, collate_fn=collate_fn)
+    trainer = Trainer(
+        model=model,
+        args=args,
+        data_collator=collate_fn,
+        train_dataset=train_data,
+        eval_dataset=eval_data,
+    )
 
-args = TrainingArguments(
-    output_dir='out_roberta_base_trained_bpe_20221122',
-    per_device_train_batch_size=64,
-    per_device_eval_batch_size=64,
-    num_train_epochs=20,
-    evaluation_strategy="steps",
-    eval_steps=20000,
-    save_strategy="steps",
-    save_steps=100000,
-    # load_best_model_at_end = True,
-    # device=device
-)
+    trainer.train()
 
-trainer = Trainer(
-    model=model,
-    args=args,
-    data_collator=collate_fn,
-    train_dataset=train_data,
-    eval_dataset=eval_data,
-    # place_model_on_device=True
-)
-# # import gc
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Training NERSOTA_RoBERTa')
 
-# # gc.collect()
-# # torch.cuda.empty_cache()
+    parser.add_argument('t', '--use_trained_tokenizer', required=False, default=True, help='True if using NERSOTA_tokenizer False if using normal tokenizer')
+    parser.add_argument('-d', '--model_name', required=False, default="NERSOTA_RoBERTa", help='Name of model - checkpoint will be saved in this dir')
+    parser.add_argument('-e', '--epochs', required=False, default=20, type=int, help='Epochs')
+    parser.add_argument('-b', '--batch_size', required=False, default=32, type=int, help='Batch_size')
+    parser.add_argument('--eval_steps', required=False, default=50000, type=int, help='Perform evaluation per n steps')
+    parser.add_argument('--save_steps', required=False, default=300000, type=int, help='Saves checkpoint of lowest eval_loss in recent eval steps - save_steps = eval_steps * n')
+    parser.add_argument('--max_length', required=False, default=64, type=int, help='Tokenizer\'s maximum padding length')
 
-# with torch.no_grad():
-trainer.train()
-# trainer.fit
+    args = parser.parse_args()
+
+    train(args)

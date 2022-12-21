@@ -1,125 +1,131 @@
-from transformers import BertTokenizer, BertForMaskedLM, BertConfig, Trainer, BatchEncoding
-from tqdm import tqdm
-# from tokenizers import BertWordPieceTokenizer
+from transformers import BertTokenizer, BertForMaskedLM, BertConfig, Trainer, TrainingArguments
 import torch
-# import transformers
-# from datasets import Dataset, DatasetDict
-# from torch.utils.data import DataLoader
+import argparse
+import os
 import json
+import gc
+def train(kwargs):
+    tokenizer_name = "beomi/kcbert-base"
+    tokenizer = BertTokenizer.from_pretrained(
+        tokenizer_name,
+        do_lower_case=False,
+    )
+    config = BertConfig(hidden_size = 768,
+                        num_hidden_layers = 12,
+                        hidden_act = 'gelu',
+                        hidden_dropout_prob = 0.1,
+                        attention_probs_dropout_prob = 0.1,
+                        max_position_embeddings = 512,
+                        layer_norm_eps = 1e-12,
+                        position_embedding_type = 'absolute',
+                        classifier_dropout = None)
+    model = BertForMaskedLM(config)
 
-# tokenizer = BertWordPieceTokenizer("bwp/vocab.txt", lowercase=False)
-# print("tokenizer loaded")
-tokenizer_name = "beomi/kcbert-base"
-tokenizer = BertTokenizer.from_pretrained(
-    tokenizer_name,
-    do_lower_case=False,
-)
-config = BertConfig(hidden_size = 768,
-                    num_hidden_layers = 12,
-                    hidden_act = 'gelu',
-                    hidden_dropout_prob = 0.1,
-                    attention_probs_dropout_prob = 0.1,
-                    max_position_embeddings = 512,
-                    layer_norm_eps = 1e-12,
-                    # position_embedding_type = 'absolute',
-                    classifier_dropout = None)
-# config = BertConfig(
-#     hidden_act = 'gelu',
-#     hidden_size = 1024,
-#     num_hidden_layers = 24,
-#     num_attention_heads = 16,
-#     intermediate_size = 4096,
-#     hidden_dropout_prob = 0.1,
-# ) #large
+    def collate_fn(text):
+        max_length = kwargs.max_length
+        inputs = tokenizer(text, return_tensors='pt', max_length=max_length, truncation=True, padding='max_length')
+        inputs['labels'] = inputs.input_ids.detach().clone()
+        rand = torch.rand(inputs.input_ids.shape)
+        mask_arr = (rand < 0.15) * (inputs.input_ids != 101) * \
+                (inputs.input_ids != 102) * (inputs.input_ids != 0)
+        selection = []
+        for i in range(inputs.input_ids.shape[0]):
+            selection.append(
+                torch.flatten(mask_arr[i].nonzero()).tolist()
+            )
 
-# model_file = "./out_kcbert_large_11221658/checkpoint-50000/pytorch_model.bin"
-# config_file = "./out_kcbert_large_11221658/checkpoint-50000/config.json"
-# optimizer_file = "./out_kcbert_large_11221658/checkpoint-50000/optimizer.pt"
+        for i in range(inputs.input_ids.shape[0]):
+            inputs.input_ids[i, selection[i]] = 103
+        return inputs
+    def gdownload(file_id, output_name):
+        import gdown
+        google_path = 'https://drive.google.com/uc?id='
+        gdown.download(google_path+file_id,output_name,quiet=False)
 
+    if not kwargs.on_memory:
+        print("loading datasets . . .")
+        if not os.path.isdir("./dataset"):
+            os.mkdir("./dataset")
+        if not os.path.isfile("./dataset/pretrain_train.json"):
+            print("downloading train_dataset . . .")
+            gdownload(file_id = '1l4MSKZLAimj2qgSlEUl-soLfPpvrhHtm', output_name = './dataset/pretrain_train.json')
+        else:
+            print("train_dataset already exists")
+        if not os.path.isfile("./dataset/pretrain_eval.json"):
+            print("downloading eval_dataset . . .")
+            gdownload(file_id = '1CWGHQ1gtQ49dM-hBVPVcv9WnNoCjsu5q', output_name = './dataset/pretrain_eval.json')
+        else:
+            print("eval_dataset already exists")
+        train_dir = 'dataset/pretrain_train.json'
+        eval_dir = 'dataset/pretrain_eval.json'
+        print("loading datasets . . .")
+        with open(train_dir, 'r', encoding='utf-8') as j_file:
+            train_data = json.load(j_file)
+        with open(eval_dir, 'r', encoding='utf-8') as j_file:
+            eval_data = json.load(j_file)
+        print(train_data[0])
+        print("dataset loaded")
 
-# model = BertForMaskedLM(config)
-model = BertForMaskedLM.from_pretrained("./out_kcbert_large_11221658/checkpoint-50000/")
+    if kwargs.on_memory:
+        print("training with dataset on memory\nTHIS PROCESS IS NOT RECOMENDED IF YOU DON'T HAVE MORE THAN 10GB MEMORY AT LEAST")
+        if not os.path.isdir("./dataset"):
+            os.mkdir("./dataset")
+        if not os.path.isfile("./dataset/train_dataset_kcbert-base.pt"):
+            print("downloading train_dataset . . .")
+            gdownload(file_id = '1XPpZDUgPW6ju8X9XhJZIyTdWpjZNTXQ-', output_name = './dataset/train_dataset_kcbert-base.pt')
+        if not os.path.isfile("./dataset/eval_dataset_kcbert-base.pt"):
+            print("downloading eval_dataset . . .")
+            gdownload(file_id = '1Sk-toHPIPD1e5Y1OBTITo--gBHwf1mfi', output_name = './dataset/eval_dataset_kcbert-base.pt')
+        print('loading train_dataset . . .')
+        train_dataset = torch.load("dataset/train_dataset_kcbert-base.pt")
+        print('loading eval_dataset . . .')
+        eval_dataset = torch.load("dataset/eval_dataset_kcbert-base.pt")
 
-device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-model.to(device)
-print("model loaded on {}".format(device))
+    print("start training . . .")
 
-"""
-    collate_function define
-"""
-def collate_fn(text):
-    max_length = 16
-    inputs = tokenizer(text, return_tensors='pt', max_length=max_length, truncation=True, padding='max_length')#.to(device1)
-    inputs['labels'] = inputs.input_ids.detach().clone()#.to(device1)
-    # create random array of floats with equal dimensions to input_ids tensor
-    rand = torch.rand(inputs.input_ids.shape)#.to(device1)
-    # create mask array
-    mask_arr = (rand < 0.15) * (inputs.input_ids != 101) * \
-            (inputs.input_ids != 102) * (inputs.input_ids != 0)
-    # print(mask_arr)
-    selection = []
-    # print("selecting tokens to shift")
-    for i in range(inputs.input_ids.shape[0]):
-        selection.append(
-            torch.flatten(mask_arr[i].nonzero()).tolist()
+    args = TrainingArguments(
+        output_dir="./" + kwargs.model_name,
+        per_device_train_batch_size=kwargs.batch_size,
+        per_device_eval_batch_size=kwargs.batch_size,
+        num_train_epochs=kwargs.epochs,
+        evaluation_strategy="steps",
+        eval_steps=kwargs.eval_steps,
+        save_strategy="steps",
+        save_steps=kwargs.save_steps,
+        load_best_model_at_end = True
+    )
+
+    if kwargs.on_memory:
+        trainer = Trainer(
+            model=model,
+            args=args,
+            train_dataset=train_dataset,
+            eval_dataset=eval_dataset
+        )
+    else:
+        trainer = Trainer(
+            model=model,
+            args=args,
+            data_collator=collate_fn,
+            train_dataset=train_data,
+            eval_dataset=eval_data,
         )
 
-    for i in range(inputs.input_ids.shape[0]):
-        inputs.input_ids[i, selection[i]] = 103
-    # print("initializing tensors to dataset")
-    # dataset = MeditationsDataset(inputs)
-    # print("done making dataset")
-    return inputs
+    gc.collect()
+    torch.cuda.empty_cache()
+    trainer.train()
 
-train_dir = 'dataset/nersota_corpus_for_pretrain_no_special_len_under64_2211141659.json_train_0.05.json'
-eval_dir = 'dataset/nersota_corpus_for_pretrain_no_special_len_under64_2211141659.json_eval_0.05.json'
-mode = "bpe"
-print("loading data")
-with open(train_dir, 'r', encoding='utf-8') as j_file:
-    train_data = json.load(j_file)
-with open(eval_dir, 'r', encoding='utf-8') as j_file:
-    eval_data = json.load(j_file)
-print(type(train_data[0]))
-print("gathering dataset")
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Training NERSOTA_BERT')
 
-"""
-    Trainer 사용 train
-"""
+    parser.add_argument('-d', '--model_name', required=False, default="NERSOTA_BERT", help='Name of model - checkpoint will be saved in this dir')
+    parser.add_argument('-e', '--epochs', required=False, default=20, type=int, help='Epochs')
+    parser.add_argument('-b', '--batch_size', required=False, default=32, type=int, help='Batch_size')
+    parser.add_argument('--eval_steps', required=False, default=50000, type=int, help='Perform evaluation per n steps')
+    parser.add_argument('--save_steps', required=False, default=300000, type=int, help='Saves checkpoint of lowest eval_loss in recent eval steps - save_steps = eval_steps * n')
+    parser.add_argument('--max_length', required=False, default=64, type=int, help='Tokenizer\'s maximum padding length')
+    parser.add_argument('--on_memory', required=False, default=False, help='Loading datasets on memory directly - Requires more than 10GB memory at least')
 
-from transformers import TrainingArguments
+    args = parser.parse_args()
 
-# args = TrainingArguments(
-#     output_dir='out_kcbert_large_11291754',
-#     per_device_train_batch_size=16,
-#     per_device_eval_batch_size=16,
-#     num_train_epochs=20,
-#     evaluation_strategy="steps",
-#     eval_steps=10000,
-#     save_strategy="steps",
-#     save_steps=100000,
-#     load_best_model_at_end = True
-# )
-
-args = torch.load(".NERtesting/out_kcbert_large_11221658/checkpoint-50000/training_args.bin")
-
-from transformers import Trainer
-trainer = Trainer(
-    model=model,
-    args=args,
-    data_collator=collate_fn,
-    train_dataset=train_data,
-    eval_dataset=eval_data,
-    # place_model_on_device=True
-)
-# trainer = Trainer(
-#     model=model,
-#     args=args,
-#     train_dataset=train_dataset,
-#     eval_dataset=eval_dataset
-# )
-
-# import gc
-# gc.collect()
-# torch.cuda.empty_cache()
-
-trainer.train()
+    train(args)
