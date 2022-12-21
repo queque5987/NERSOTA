@@ -1,5 +1,8 @@
 from transformers import pipeline
 from tqdm import tqdm
+from train_1028 import train1209 as bert_base_kcbert
+from train_1028 import train1210 as roberta
+from train_1028 import train1210_2 as roberta_t
 # import spacy
 # pip install --no-cache-dir transformers sentencepiece
 # pip install tensorflow <- ?
@@ -70,6 +73,29 @@ class robertaMLM():
         # e_input = self.encode(text)
         # print(e_input.input_ids.size())
         # return self.model(e_input)
+        return self.pipeline(text.replace("<mask>", self.masktoken))
+
+class KcBERTMLM():
+    def __init__(self, ckpt_dir = "./checkpoint-4750000/"):
+        from transformers import BertTokenizer, BertForMaskedLM
+        import torch, json
+        self.tokenizer = BertTokenizer.from_pretrained(
+            "beomi/kcbert-base",
+            do_lower_case=False,
+        )
+        with open(ckpt_dir + "config.json", "r") as file:
+            self.config = json.load(file)
+        self.model = BertForMaskedLM.from_pretrained("./checkpoint-4750000")
+        # self.model.load_state_dict(torch.load(ckpt_dir + "pytorch_model.bin"))
+        self.model.eval()
+        self.pipeline = pipeline(
+            "fill-mask",
+            model=self.model,
+            tokenizer=self.tokenizer,
+            framework="pt"
+        )
+        self.masktoken = self.tokenizer.mask_token
+    def inference(self, text):
         return self.pipeline(text.replace("<mask>", self.masktoken))
 
 class xlmr():
@@ -150,14 +176,22 @@ if __name__ == "__main__":
     # import random
     # # ckpt_name = 'epoch=2-val_loss=0.06'
     # # kcbert_model = kcbert.inference('C:/nlpbook/checkpoint-ner/{}.ckpt'.format(ckpt_name))
-    # # test_dataset = pd.read_csv('corpus/new_corpus_no_overlap_no_drop_test_data_4_1109.csv', sep=',')
-    # # kcbert_model = kcbert()
+    # import pandas as pd
+    # test_dataset = pd.read_csv("./dataset/new_corpus_no_overlap_no_drop_test_data_4_1109.csv", sep=',')
+    # kcbert_model = kcbert()
     # kcbert_model = ftd_kcbert.inference(ckpt_dir="epoch=2-val_loss=0.14.ckpt", label_map_dir="label_map.txt")
-    j = "./dataset/nersota_corpus_for_pretrain_no_special_len_under64_test_0.05_masked.json"
+    j = "./ner_mo_s/test.json"
+    model = roberta.roberta()
+    # model = roberta_t.roberta()
+    # model = bert_base_kcbert.kcbert_inference()
+    # model = bert_base_kcbert.inference()
     with open(j,'r', encoding='utf-8') as j_file:
         lines = json.load(j_file)
+    # print(lines[0])
+    lines = [line["ko"] for line in lines]
     # lines = []
     # lines = test_dataset['ko_original'].values.tolist()
+    print(lines[0])
     # print(len(lines))
     # total_output = []
     # for i in tqdm(range(0, len(lines), 30)):
@@ -174,37 +208,44 @@ if __name__ == "__main__":
     #     # print(total_output[i:i+5 if i+5 <= len(lines) else -1])
     #     if idx == len(lines): break
     # xlmr = xlmr()
-    roberta = robertaMLM(trained = False)
-    print(roberta.inference("재석이형 <mask>로 와봐요."))
+    # roberta = KcBERTMLM()
+    # print(roberta.inference("서울의 수도는 <mask>입니다."))
     final_outputs = []
     count = 0
+    print("total {} lines".format(len(lines)))
     for i, line in tqdm(enumerate(lines)):
-    #     outputs = []
-    #     # lines.append(line.strip())
-    #     output = kcbert_model.inference_fn(line)
-    #     # output = kcbert_model.inference_fn(line)
-        output = roberta.inference(line)
+    # #     outputs = []
+    # #     # lines.append(line.strip())
+    # #     output = kcbert_model.inference_fn(line)
+    # #     # output = kcbert_model.inference_fn(line)
+        # output = roberta.inference(line)
+        output = model.inference_fn(line)
         final_outputs.append(output)
-    #     # for result in output['result']:
-    #     #     outputs.append(result)
-    #     final_outputs.append({'sentence' : line, 'ner' : output})
-    #     # print(outputs)
-    #     # break
-    #     # output = xlmr.inference(line)
-    #     # t, o, b = spcaye.inference(line)
-    #     # lines.append({'ko_original' : line, 'tokens' : t, 'output' : o, 'bio_tags' : b})
-    #     # break
-    # # print(lines[:1])
-        if i%50000 == 0:
-            print(final_outputs[0])
-            with open("roberta_base_normal{}.json".format(count), "w", encoding='utf-8') as outfile:
-                json.dump(final_outputs, outfile, indent=2, ensure_ascii=False)
-            count += 1
-            final_outputs = []
-    print(final_outputs[0])
-    with open("roberta_base_normal{}.json".format(count), "w", encoding='utf-8') as outfile:
+        count += 1
+        # if count == 10: break
+        # break
+    # #     # for result in output['result']:
+    # #     #     outputs.append(result)
+    # #     final_outputs.append({'sentence' : line, 'ner' : output})
+    # #     # print(outputs)
+    # #     # break
+    # #     # output = xlmr.inference(line)
+    # #     # t, o, b = spcaye.inference(line)
+    # #     # lines.append({'ko_original' : line, 'tokens' : t, 'output' : o, 'bio_tags' : b})
+    # #     # break
+    # # # print(lines[:1])
+    #     if i%50000 == 0:
+    #         print(final_outputs[0])
+    #         with open("./mlm_output/bert_base_normal{}.json".format(count), "w", encoding='utf-8') as outfile:
+    #             json.dump(final_outputs, outfile, indent=2, ensure_ascii=False)
+    #         count += 1
+    #         final_outputs = []
+    import random
+    print(final_outputs[random.randint(0, len(final_outputs)-1)])
+    with open("./dataset/old_Roberta_mos_{}.json".format(count), "w", encoding='utf-8') as outfile:
         json.dump(final_outputs, outfile, indent=2, ensure_ascii=False)
-    final_outputs = []
+    print('done')
+    # final_outputs = []
     # output = pd.DataFrame(final_outputs)
     # output.to_csv('output_kc_bert_{}_1110.csv'.format('ckpt_name'), index=False)
     # print('done')

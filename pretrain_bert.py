@@ -14,23 +14,23 @@ tokenizer = BertTokenizer.from_pretrained(
     tokenizer_name,
     do_lower_case=False,
 )
-# config = BertConfig(hidden_size = 768,
-#                     num_hidden_layers = 12,
-#                     hidden_act = 'gelu',
-#                     hidden_dropout_prob = 0.1,
-#                     attention_probs_dropout_prob = 0.1,
-#                     max_position_embeddings = 512,
-#                     layer_norm_eps = 1e-12,
-#                     # position_embedding_type = 'absolute',
-#                     classifier_dropout = None)
-config = BertConfig(
-    hidden_act = 'gelu',
-    hidden_size = 1024,
-    num_hidden_layers = 24,
-    num_attention_heads = 16,
-    intermediate_size = 4096,
-    hidden_dropout_prob = 0.1,
-) #large
+config = BertConfig(hidden_size = 768,
+                    num_hidden_layers = 12,
+                    hidden_act = 'gelu',
+                    hidden_dropout_prob = 0.1,
+                    attention_probs_dropout_prob = 0.1,
+                    max_position_embeddings = 512,
+                    layer_norm_eps = 1e-12,
+                    # position_embedding_type = 'absolute',
+                    classifier_dropout = None)
+# config = BertConfig(
+#     hidden_act = 'gelu',
+#     hidden_size = 1024,
+#     num_hidden_layers = 24,
+#     num_attention_heads = 16,
+#     intermediate_size = 4096,
+#     hidden_dropout_prob = 0.1,
+# ) #large
 
 # model_file = "./out_kcbert_large_11221658/checkpoint-50000/pytorch_model.bin"
 # config_file = "./out_kcbert_large_11221658/checkpoint-50000/config.json"
@@ -100,7 +100,7 @@ from transformers import TrainingArguments
 #     load_best_model_at_end = True
 # )
 
-args = torch.load("./out_kcbert_large_11221658/checkpoint-50000/training_args.bin")
+args = torch.load(".NERtesting/out_kcbert_large_11221658/checkpoint-50000/training_args.bin")
 
 from transformers import Trainer
 trainer = Trainer(
