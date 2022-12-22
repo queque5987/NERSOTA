@@ -84,8 +84,7 @@
 >기존 문어체로 학습된 모델의 Macro averaged F1 Score(*이하 F1 Score*)를 측정한 결과 매우 낮은 수준으로 측정되었다.<br><br>
 >또한, 기존 LM을 Finetuning한 것만으로도 F1 Score 0.21 >> 0.73으로 유의미한 성능 향상을 보였다.
 
-
->LM의 특화 정도에 따른 성능 변화를 관찰하기 위하여 구어체 특화 PLM을 학습하였다.
+>다음으로, LM의 특화 정도에 따른 성능 변화를 관찰하기 위하여 구어체 특화 PLM을 학습하였다.
 ![image](https://user-images.githubusercontent.com/64758868/209208480-430bee22-1a87-4627-8817-c9183fa4c531.png)
 ![image](https://user-images.githubusercontent.com/64758868/209208568-7f0e0d5e-c162-42e6-9170-d1576fa1925e.png)
 ![image](https://user-images.githubusercontent.com/64758868/209208575-e60be666-ce1a-456f-909d-acb74bbdd380.png)
