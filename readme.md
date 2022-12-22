@@ -86,7 +86,7 @@
 
 |PLM                |Dataset A(4)|Dataset A(15)|Dataset B |Dataset C |
 |:------------------|:----------:|:------------:|:--------:|:--------:|
-|[KcBERT](https://github.com/Beomi/KcBERT)            |0.73        |0.73|**0.78**  |**0.84**  |
+|[KcBERT](https://github.com/Beomi/KcBERT)            |0.73        |0.73|**0.78**  |0.84  |
 |NERSOTA-BERT       |**0.76**    |-|**0.78**  |0.82      |
 |NERSOTA-RoBERTa-t  |*0.38*      |-|*0.24*    |*0.33*    |
 |NERSOTA-RoBERTa-u  |*0.40*      |-|*0.29*    |-         |
@@ -105,7 +105,8 @@
 >그리고 Dataset C에서 오히려 NERSOTA-BERT-base가 떨어지는 점을 보았을 때<br>
 >15가지의 태그로 진행할 때는 단순 PLM 교체로는 부족하다는 점을 알 수 있다.<br><br>
 >NERSOTA-BERT-base는 MLM만을 사용하여 학습되었으나, KcBERT의 경우는 MLM, NSP를 진행하여 학습되어 F1 Score가 높게 측정되었다.<br>
->NERSOTA-Electra-small의 경우는 RTD를 사용하여 학습된 차이점이 존재한다.<br><br>
+>NERSOTA-Electra-small의 경우는 RTD를 사용하여 학습된 차이점이 존재한다.<br>
+>이러한 모델 구조상의 차이로 인하여 NERSOTA-Electra의 경우 높은 F1 Score를 달성하였다.<br><br>
 >NERSOTA-RoBERTa-base 모델을 사용하여 Tokenizer의 학습의 유의미함을 연구하고자 하였으나,<br>
 >전체 RoBERTa-base기반 PLM의 F1 Score가 비정상적으로 낮게 측정되었고,<br>
 >구어체로 학습된 Tokenizer가 오히려 성능을 하락하였다.<br>
