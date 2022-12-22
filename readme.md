@@ -24,18 +24,18 @@
 ### • Pretrain Dataset
 |Dataset|Domain|#Sentence|
 |:------|:-----|:--------|
-|[AIHub] 방송 콘텐츠 대본 요약 데이터|가족관련방송, 현대드라마, 역사극, 시사, 교양지식, 예능|897,113|
-|[AIHub] 일상생활 및 구어체 한-중, 한-일 번역 병렬 말뭉치 데이터	|일상생활, 해외영업, 채팅	|1,313,479|
-|[AIHub] 다국어 구어체 번역 병렬 말뭉치 데이터	|일상생활, 해외영업, 채팅	|1,298,467|
-|[모두의말뭉치] 구어체 말뭉치	|공적 독백, 공적 대화, 준구어-대본	|8,843,306|
-|[모두의말뭉치] 일상 대화 말뭉치 2020	|일상 대화, 협력적 대화	|141,721|
+|[[AIHub](https://www.aihub.or.kr/)] 방송 콘텐츠 대본 요약 데이터|가족관련방송, 현대드라마, 역사극, 시사, 교양지식, 예능|897,113|
+|[[AIHub](https://www.aihub.or.kr/)] 일상생활 및 구어체 한-중, 한-일 번역 병렬 말뭉치 데이터	|일상생활, 해외영업, 채팅	|1,313,479|
+|[[AIHub](https://www.aihub.or.kr/)] 다국어 구어체 번역 병렬 말뭉치 데이터	|일상생활, 해외영업, 채팅	|1,298,467|
+|[[모두의 말뭉치](https://corpus.korean.go.kr/)] 구어체 말뭉치	|공적 독백, 공적 대화, 준구어-대본	|8,843,306|
+|[[모두의 말뭉치](https://corpus.korean.go.kr/)] 일상 대화 말뭉치 2020	|일상 대화, 협력적 대화	|141,721|
 
 ### • Finetuning Dataset
 |Dataset|Domain|#Sentence|
 |:------|:-----|:--------|
-|[AIHub] 방송 콘텐츠 한-중, 한-일 번역 병렬 말뭉치 데이터	|TV 방송, 라디오 방송	|1,350,000|
-|[AIHub] 일상생활 및 구어체 한-영 번역 병렬 말뭉치 데이터	|일상생활, 해외영업, 해외고객과의 채팅	|1,350,000|
-|[모두의말뭉치] 개체명 분석 말뭉치 2021	|공적 독백, 공적 대화, 준구어-대본	|552,293|
+|[[AIHub](https://www.aihub.or.kr/)] 방송 콘텐츠 한-중, 한-일 번역 병렬 말뭉치 데이터	|TV 방송, 라디오 방송	|1,350,000|
+|[[AIHub](https://www.aihub.or.kr/)] 일상생활 및 구어체 한-영 번역 병렬 말뭉치 데이터	|일상생활, 해외영업, 해외고객과의 채팅	|1,350,000|
+|[[모두의 말뭉치](https://corpus.korean.go.kr/)] 개체명 분석 말뭉치 2021	|공적 독백, 공적 대화, 준구어-대본	|552,293|
 
 **NER 태깅이 된 문장만 활용함*
 
@@ -76,22 +76,26 @@
 
 |NER Model           |Dataset A(n)|
 |:-------------------|:----------:|
-|KcBERT(Naver NER)   |0.21        |
-|LETR                |0.50        |
-|KoBERT              |0.34        |
-|tf-xlm-r-ner-40-lang|0.25        |
-|KcBERT(Finetuned)   |**0.73**    |
+|[KcBERT](https://github.com/Beomi/KcBERT)(Naver NER)   |0.21        |
+|[LETR API](https://www.letr.ai/)            |0.50        |
+|[KoBERT](https://github.com/SKTBrain/KoBERT)              |0.34        |
+|[tf-xlm-r-ner-40-lang](https://huggingface.co/jplu/tf-xlm-r-ner-40-lang)|0.25        |
+|[KcBERT](https://github.com/Beomi/KcBERT)(Finetuned)   |**0.73**    |
 >기존 문어체로 학습된 모델의 Macro averaged F1 Score(*이하 F1 Score*)를 측정한 결과 매우 낮은 수준으로 측정되었다.<br><br>
 >또한, 기존 LM을 Finetuning한 것만으로도 F1 Score 0.21 >> 0.73으로 유의미한 성능 향상을 보였다.
 
 |PLM                |Dataset A(4)|Dataset A(15)|Dataset B |Dataset C |
 |:------------------|:----------:|:------------:|:--------:|:--------:|
-|KcBERT             |0.73        |0.73|**0.78**  |**0.84**  |
+|[KcBERT](https://github.com/Beomi/KcBERT)             |0.73        |0.73|**0.78**  |**0.84**  |
 |NERSOTA-BERT       |**0.76**    |-|**0.78**  |0.82      |
 |NERSOTA-RoBERTa-t  |*0.38*      |-|*0.24*    |*0.33*    |
 |NERSOTA-RoBERTa-u  |*0.40*      |-|*0.29*    |-         |
 |NERSOTA-Electra    |          | |          |          |
->Pretrain Dataset을 사용하여 BERT-base, RoBERTa-base의 학습을 진행하여 PLM을 구축하였다.<br>
+>Pretrain Dataset을 사용하여 BERT-base, RoBERTa-base의 학습을 진행하여 PLM을 구축하였다.<br><br>
+>[KcBERT](https://github.com/Beomi/KcBERT)는 기존 LM을 그대로 사용하여 baseline으로 사용하였다..<br>
+>NERSOTA-BERT에는 [KcBERT](https://github.com/Beomi/KcBERT) Tokenizer를 사용하였고,<br>
+>NERSOTA-RoBERTa-t는 Pretrain Dataset으로 학습된 Tokenizer,<br>
+>NERSOTA-RoBERTa-u는 [KoSimSCE-roberta](https://github.com/BM-K/Sentence-Embedding-is-all-you-need) Tokenizer 두 종류로 진행하였다.<br><br>
 >PLM을 각각의 Dataset으로 Finetuning하여 그 결과의 F1 Score를 측정한 값이다.<br>
 
 ## 3. 결론
@@ -219,7 +223,11 @@ pprint
 [BERT](https://github.com/google-research/bert)<br>
 [RoBERTa](https://huggingface.co/roberta-base)<br>
 [KcBERT](https://github.com/Beomi/KcBERT)<br>
+[tf-xlm-r-ner-40-lang](https://huggingface.co/jplu/tf-xlm-r-ner-40-lang)<br>
+[KoBERT](https://github.com/SKTBrain/KoBERT)<br>
+[LETR API](https://www.letr.ai/)<br>
 [KoSimSCE-roberta](https://github.com/BM-K/Sentence-Embedding-is-all-you-need)<br>
+
 
 [AIHub](https://www.aihub.or.kr/)<br>
 [모두의 말뭉치](https://corpus.korean.go.kr/)<br>
