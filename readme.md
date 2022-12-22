@@ -68,7 +68,7 @@
 >Dataset C는 Finetuning Dataset의 개체명 분석 말뭉치 2021 데이터만을 사용하였다.
 ***
 
-## 2. Macro averaged F1 Score
+## 2. 모델 연구
 >NER에서 F1 measure를 적용시키기 위하여 정답 label을 Sequence label 형태로 변환하여 측정하였는데,<br>
 >변환된 Sequence label은 O 태그의 개수가 현저히 많아 O태그에 대한 가중치가 높게 측정되어<br>
 >F1 Score 또한 비정상적으로 높게 측정되는 현상이 있었다.<br><br>
@@ -83,6 +83,12 @@
 |[KcBERT](https://github.com/Beomi/KcBERT)(Finetuned)   |**0.73**    |
 >기존 문어체로 학습된 모델의 Macro averaged F1 Score(*이하 F1 Score*)를 측정한 결과 매우 낮은 수준으로 측정되었다.<br><br>
 >또한, 기존 LM을 Finetuning한 것만으로도 F1 Score 0.21 >> 0.73으로 유의미한 성능 향상을 보였다.
+
+
+>LM의 특화 정도에 따른 성능 변화를 관찰하기 위하여 구어체 특화 PLM을 학습하였다.
+![image](https://user-images.githubusercontent.com/64758868/209208480-430bee22-1a87-4627-8817-c9183fa4c531.png)
+![image](https://user-images.githubusercontent.com/64758868/209208568-7f0e0d5e-c162-42e6-9170-d1576fa1925e.png)
+![image](https://user-images.githubusercontent.com/64758868/209208575-e60be666-ce1a-456f-909d-acb74bbdd380.png)
 
 |PLM                |Dataset A(4)|Dataset A(15)|Dataset B |Dataset C |
 |:------------------|:----------:|:------------:|:--------:|:--------:|
@@ -140,6 +146,7 @@ python pretrain_roberta.py -t True ##--model_name NERSOTA_RoBERTa_t --epochs 20 
 python pretrain_roberta.py ##-t False --model_name NERSOTA_RoBERTa_u --epochs 20 --batch_size 32
                            ##--eval_steps 50000 --save_steps 300000 --max_length 64
 ```
+
 ***
 ### • Finetuning
 #### NERSOTA-BERT
