@@ -4,6 +4,7 @@ import argparse
 import pathlib
 import os
 import data_utils as utils
+from tqdm import tqdm
 class inference():
     def __init__(self, kwargs):
         self.tokenizer = BertTokenizer.from_pretrained(
@@ -31,7 +32,7 @@ class inference():
         
         self.model.load_state_dict({k.replace("model.",""): v for k, v in fine_tuned_model_ckpt['state_dict'].items()})
         self.model.eval()
-        labels = [label.strip() for label in open('./workspace/nlpbook/bert_base_t_kcbert_15/nlpbook/checkpoint-ner/label_map.txt','r').readlines()]
+        labels = [label.strip() for label in open(os.path.join(os.path.dirname(kwargs.checkpoint_dir), 'label_map.txt'),'r').readlines()]
         self.id_to_label = {}
         for idx, label in enumerate(labels):
             self.id_to_label[idx] = label
@@ -59,16 +60,20 @@ class inference():
                         "top_prob" : str(round(top_prob[0].item(), 4)),
                     }
                     result.append(token_result)
-        return {
+        # return {
+        #     "sentence" : sentence,
+        #     "result" : result
+        # }
+        return utils.add_sequence_label({
             "sentence" : sentence,
             "result" : result
-        }
+        })
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Training NERSOTA_BERT')
 
     parser.add_argument('-m', '--model', required=True, help='BERT or RoBERTa')
     parser.add_argument('-c', '--checkpoint_dir', required=True, help='Directory where checkpoint files are in ex)\'./NERSOTA_BERT/epoch=1-val_loss=0.18.ckpt\'')
-    parser.add_argument('--text', required=False, default="유재석은 대한민국의 개그맨이다.", type=str, help='Text to inference')
+    parser.add_argument('--text', required=False, default="최예나는 24살이고, 대한민국의 가수야", type=str, help='Text to inference')
 
     parser.add_argument('-l', '--load_as_file', required=False, default="", type=str, help='.Json to inference as a file')
     parser.add_argument('-s', '--save_dir', required=False, default="./output", help='Result will be saved in this directory')
@@ -86,12 +91,16 @@ if __name__ == "__main__":
         import json
         args.load_as_file = pathlib.Path(args.load_as_file)
         args.save_dir = pathlib.Path(args.save_dir)
+        if not os.path.isdir(args.save_dir):
+            os.mkdir(args.save_dir)
         with open(args.load_as_file, "r", encoding="utf-8") as f:
             lines = json.load(f)
             output = []
-            for line in lines:
-                output.append(utils.add_sequence_label(model.inference_fn(line)))
-        with open(args.save_dir, "w", encoding="utf-8") as f:
+            for line in tqdm(lines[:20]):
+                output.append(model.inference_fn(line))
+                # output.append(utils.add_sequence_label(model.inference_fn(line)))
+        with open(os.path.join(args.save_dir, args.checkpoint_dir.name + ".json"), "w", encoding="utf-8") as f:
             json.dump(output, f, indent=2, ensure_ascii=False)
     else:
-        print(utils.add_sequence_label(model.inference_fn(args.text)))
+        from pprint import pprint
+        pprint(model.inference_fn(args.text))

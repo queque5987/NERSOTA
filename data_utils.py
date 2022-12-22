@@ -72,8 +72,6 @@ def add_sequence_label(output):
                     else: new_sentence[i] = predicted_tag
                     flag = True
                     break
-        # if not flag:
-        #     print("error ", new_sentence, token)
         return new_sentence, flag
     sentence = output['sentence']
     result = output['result']
@@ -89,7 +87,7 @@ def add_sequence_label(output):
     for sen_idx, s in enumerate(new_sentence):
         if s not in label_map:
             if s == " ":
-                if new_sentence[sen_idx+1][0] == "I":
+                if new_sentence[sen_idx-1][0] != "O" and new_sentence[sen_idx+1][0] == "I":
                     new_sentence[sen_idx] = new_sentence[sen_idx+1]
                 else: new_sentence[sen_idx] = "O"
             else:
@@ -100,13 +98,23 @@ def add_sequence_label(output):
         if out != "O":
             if out[0] == "B":
                 if i+1 >= len(new_sentence) or new_sentence[i+1] == "O":
-                    output_b = output_b[:i+n] + "<{}>".format(out[3:]) + output_b[i+n:] + "</{}>".format(out[3:])
-                    n += len("<{}>".format(out[3:])) + len("</{}>".format(out[3:]))
+                    output_b = output_b[:i+n] + "<{}>".format(out[2:]) + output_b[i+n] + "</{}>".format(out[2:]) + output_b[i+n+1:]
+                    n += len("<{}>".format(out[2:])) + len("</{}>".format(out[2:]))
                 else:
-                    output_b = output_b[:i+n] + "<{}>".format(out[3:]) + output_b[i+n:]
-                    n += len("<{}>".format(out[3:]))
+                    output_b = output_b[:i+n] + "<{}>".format(out[2:]) + output_b[i+n:]
+                    n += len("<{}>".format(out[2:]))
             elif out[0] == "I":
-                output_b = output_b[:i+n] + "</{}>".format(out[3:]) + output_b[i+n:]
-                n += len("</{}>".format(out[3:]))
+                if i-1 < 0 or new_sentence[i-1] == "O":
+                    if new_sentence[i+1] == new_sentence[i]:
+                        output_b = output_b[:i+n] + "<{}>".format(out[2:]) + output_b[i+n:]
+                        n += len("<{}>".format(out[2:]))
+                    else:
+                        output_b = output_b[:i+n] + "<{}>".format(out[2:]) + output_b[i+n] + "</{}>".format(out[2:]) + output_b[i+n+1:]
+                        n += len("<{}>".format(out[2:])) + len("</{}>".format(out[2:]))
+                elif new_sentence[i+1] == new_sentence[i]:
+                    continue
+                else:
+                    output_b = output_b[:i+n+1] + "</{}>".format(out[2:]) + output_b[i+n+1:]
+                    n += len("</{}>".format(out[2:]))
 
     return {"sentence" : sentence, "output_b" : output_b, "output" : new_sentence, "result" : result}
