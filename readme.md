@@ -1,4 +1,16 @@
 # 트위그팜 SOL Project 3기<br>'구어체 NER 인식률 향상 연구 프로젝트'
+## 목차
+[1. 데이터셋](#1-dataset)
+
+[2. 모델 연구](#2-research)
+
+[3. 결과](#3-result)
+
+[4. 한계점](#4-limitation)
+
+[사용법](#how-to-use)
+
+[참고 자료](#reference)
 ## 0. 개론
 >최근 K-콘텐츠의 흥행으로 인한 글로벌 OTT서비스가 각광받기 시작하였고,<br>
 >그로 인하여 기계번역 기술의 필요성 증대되었다.<br><br>
@@ -66,7 +78,7 @@
 >Dataset C는 Finetuning Dataset의 개체명 분석 말뭉치 2021 데이터만을 사용하였다.
 
 
-## 2. 모델 연구
+## 2. Research
 >NER에서 F1 measure를 적용시키기 위하여 정답 label을 Sequence label 형태로 변환하여 측정하였는데,<br>
 >변환된 Sequence label은 O 태그의 개수가 현저히 많아 O태그에 대한 가중치가 높게 측정되어<br>
 >F1 Score 또한 비정상적으로 높게 측정되는 현상이 있었다.<br><br>
@@ -104,7 +116,7 @@
 >NERSOTA-RoBERTa-u는 [KoSimSCE-roberta](https://github.com/BM-K/Sentence-Embedding-is-all-you-need) Tokenizer 두 종류로 진행하였다.<br><br>
 >PLM을 각각의 Dataset으로 Finetuning하여 그 결과의 F1 Score를 측정한 값이다.<br>
 
-## 3. 결론
+## 3. Result
 >Dataset A(4)에서 같은 BERT-base 기반 LM KcBERT에서 NERSOTA-BERT-base로 교체한 것 만으로 성능 향상을 보았다.<br>
 >이로써 구어체 특화 PLM을 사용하는 것만으로도 유의미한 성능 향상을 이룩할 수 있다는 점을 증명하였다.<br><br>
 >하지만, Dataset B에서 동일하게 LM을 교체하였으나, 점수가 동일하게 나왔다는 점<br>
@@ -118,7 +130,7 @@
 >구어체로 학습된 Tokenizer가 오히려 성능을 하락하였다.<br>
 >이에 대해서 Tokenizer의 학습 유무는 구어체 NER 인식률에서 성능 차이를 보이지 않았다고 볼 수 있으나, 추가 연구를 진행해야 한다.
 
-## 4. 한계점
+## 4. Limitation
 >PLM의 학습 방법에서 DatasetB와 모두의 말뭉치 Test dataset에서 비슷하거나 오히려 낮은 점수를 기록한 이유를 찾았으나,<br>
 >문장 내에서 Classification을 진행하는 NER작업에서 문장 내의 문맥을 파악하는 MLM만을 진행하는 것이 부족한지는 의문이다.<br>
 >이를 해결하기 위해선 우선 Pretrain Dataset의 양을 증강할 필요가 있다.<br>
