@@ -211,7 +211,7 @@ torchaudio == 0.7.2<br>
 cudatoolkit == 11.0<br>
 [ratsnlp](https://github.com/ratsgo/ratsnlp) == 1.0.52<br>
 tqdm<br>
-gdown<
+gdown<br>
 pprint
 
 ***
