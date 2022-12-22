@@ -1,4 +1,5 @@
-# 트위그팜 SOL Project 3기 "구어체 NER 인식률 향상" 프로젝트
+# 트위그팜 SOL Project 3기
+# 구어체 NER 인식률 향상 프로젝트
 
 ## How to use
 ### Pretrain
