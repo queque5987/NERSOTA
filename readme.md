@@ -12,14 +12,11 @@
 >둘째, 현재 한국어 NER 모델을 구어체에서도 높은 인식률을 달성하려면 무엇이 필요한가.<br><br>
 >본 연구는 두 번째 연구 주제에 집중하여 진행되었다.
 
-***
-
 ## 1. Dataset
 >구어체 NER 성능 비교 및 모델 학습을 위하여 한국어 구어체 NER Dataset을 구축하였다.<br><br>
 >AIHub와 모두의 말뭉치에서 구어체 Corpus를 수집하였고,<br>
 >NER 태깅이 되어 있는 Corpus를 구분하여 각 Pretrain Dataset, Finetuning Dataset에적용하였다.<br><br>
 >모든 데이터셋은 8:1:1 로 Train, evaluation, test 데이터셋으로 분리하였다.
-***
 
 ### • Pretrain Dataset
 |Dataset|Domain|#Sentence|
@@ -51,7 +48,7 @@
 >이는 모두의 말뭉치 데이터셋, 즉 15가지 태깅이 되어 있는 문장으로 대체하였다.<br><br>
 >하지만, AIHub에서 가져온 데이터가 77,333문장이기 때문에<br>
 >최소 8,342문장이 4개 태그 기준으로 태깅이 되어 있음을 알 수 있다.
-***
+
 
 #### - Dataset B (Finetuning Dataset + NERSOTA Dataset)
 >기존의 0.73의 F1 Score는 Dataset A(15)의 수량이 부족하고<br>
@@ -63,10 +60,11 @@
 >또한, 작업자 개인의 작업 능률과 이해도에 따라 작업량을 조절하며 진행하였다.<br><br>
 >작업완료 후, json파일을 검토하였으며 범위가 지정되어 있지 않거나,<br>
 >태그가 누락된 문장, 태깅 대상이 누락된 문장 등 5000여 문장을 수정하였다.<br>
-***
+
+
 #### - Dataset C (개체명 분석 말뭉치 2021)
 >Dataset C는 Finetuning Dataset의 개체명 분석 말뭉치 2021 데이터만을 사용하였다.
-***
+
 
 ## 2. 모델 연구
 >NER에서 F1 measure를 적용시키기 위하여 정답 label을 Sequence label 형태로 변환하여 측정하였는데,<br>
@@ -85,6 +83,9 @@
 >또한, 기존 LM을 Finetuning한 것만으로도 F1 Score 0.21 >> 0.73으로 유의미한 성능 향상을 보였다.
 
 >다음으로, LM의 특화 정도에 따른 성능 변화를 관찰하기 위하여 구어체 특화 PLM을 학습하였다.
+>Pretrain Dataset을 사용하였고, Epoch: 20, Batch_size: 32, AdamW optimizer를 사용하여 학습하였다.<br>
+>RTX2070SUPER 기준 20일 정도 소모되었고, NVIDIA A100 기준 6일 정도 소모되었다.<br>
+>학습 중 감소하는 Loss값을 기록하였다.<br>
 ![image](https://user-images.githubusercontent.com/64758868/209208480-430bee22-1a87-4627-8817-c9183fa4c531.png)
 ![image](https://user-images.githubusercontent.com/64758868/209208568-7f0e0d5e-c162-42e6-9170-d1576fa1925e.png)
 ![image](https://user-images.githubusercontent.com/64758868/209208575-e60be666-ce1a-456f-909d-acb74bbdd380.png)
@@ -146,7 +147,6 @@ python pretrain_roberta.py ##-t False --model_name NERSOTA_RoBERTa_u --epochs 20
                            ##--eval_steps 50000 --save_steps 300000 --max_length 64
 ```
 
-***
 ### • Finetuning
 #### NERSOTA-BERT
 ```Python
@@ -163,7 +163,6 @@ python pretrain_roberta.py -c ./NERSOTA_RoBERTa_t --tokenizer "NERSOTA" ##--mode
 python pretrain_roberta.py -c ./NERSOTA_RoBERTa_u ##--model_name NERSOTA_RoBERT_u --tokenizer "BM-K/KoSimCSE-roberta" --epochs 3
                            ##--batch_size 32 --learning_rate 1e-5 --corpus_name ner --max_length 64 --seed 7
 ```
-***
 ### • Inference
 #### Text
 ```Python
@@ -175,7 +174,6 @@ python inference.py -m BERT -c ./NERSOTA_BERT/epoch=1-val_loss=0.18.ckpt --text 
 python inference.py -m BERT -c ./NERSOTA_BERT/epoch=1-val_loss=0.18.ckpt -l test.json -s ./output
                     ##-d NERSOTA_RoBERTa -t beomi/kcbert-base --max_length 128
 ```
-***
 ### • Output
 ```Python
 $ python inference.py -m BERT -c ./trained/bert_base_t_kcbert_15/nlpbook/checkpoint-ner/epoch=4-val_loss=0.18.ckpt
@@ -213,31 +211,26 @@ $ python inference.py -m BERT -c ./trained/bert_base_t_kcbert_15/nlpbook/checkpo
             {'predicted_tag': 'O', 'token': '##야', 'top_prob': '0.9992'}],
  'sentence': '최예나는 24살이고, 대한민국의 가수야'}
 ```
-***
 ## Dependency (CUDA = 11.0 기준)
-transformers == 4.10.0<br>
-pytorch == 1.7.1<br>
-torchvision == 0.8.2<br>
-torchaudio == 0.7.2<br>
-cudatoolkit == 11.0<br>
-[ratsnlp](https://github.com/ratsgo/ratsnlp) == 1.0.52<br>
-tqdm<br>
-gdown<br>
-pprint
+- transformers == 4.10.0<br>
+- pytorch == 1.7.1<br>
+- torchvision == 0.8.2<br>
+- torchaudio == 0.7.2<br>
+- cudatoolkit == 11.0<br>
+- [ratsnlp](https://github.com/ratsgo/ratsnlp) == 1.0.52<br>
+- tqdm<br>
+- gdown<br>
+- pprint
 
-***
 ## Reference
-[BERT](https://github.com/google-research/bert)<br>
-[RoBERTa](https://huggingface.co/roberta-base)<br>
-[KcBERT](https://github.com/Beomi/KcBERT)<br>
-[tf-xlm-r-ner-40-lang](https://huggingface.co/jplu/tf-xlm-r-ner-40-lang)<br>
-[KoBERT](https://github.com/SKTBrain/KoBERT)<br>
-[LETR API](https://www.letr.ai/)<br>
-[KoSimSCE-roberta](https://github.com/BM-K/Sentence-Embedding-is-all-you-need)<br>
-
-
-[AIHub](https://www.aihub.or.kr/)<br>
-[모두의 말뭉치](https://corpus.korean.go.kr/)<br>
-
-[트위그팜](https://www.twigfarm.net/)<br>
-[Label Studio](https://labelstud.io/)
+- [BERT](https://github.com/google-research/bert)<br>
+- [RoBERTa](https://huggingface.co/roberta-base)<br>
+- [KcBERT](https://github.com/Beomi/KcBERT)<br>
+- [tf-xlm-r-ner-40-lang](https://huggingface.co/jplu/tf-xlm-r-ner-40-lang)<br>
+- [KoBERT](https://github.com/SKTBrain/KoBERT)<br>
+- [LETR API](https://www.letr.ai/)<br>
+- [KoSimSCE-roberta](https://github.com/BM-K/Sentence-Embedding-is-all-you-need)<br>
+- [AIHub](https://www.aihub.or.kr/)<br>
+- [모두의 말뭉치](https://corpus.korean.go.kr/)<br>
+- [트위그팜](https://www.twigfarm.net/)<br>
+- [Label Studio](https://labelstud.io/)
