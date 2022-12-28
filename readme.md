@@ -31,7 +31,7 @@
 >모든 데이터셋은 8:1:1 로 Train, evaluation, test 데이터셋으로 분리하였다.
 
 ### • Pretrain Dataset
-|Dataset|Domain|#Sentence|
+|Corpus|Domain|#Sentence|
 |:------|:-----|:--------|
 |[[AIHub](https://www.aihub.or.kr/)] 방송 콘텐츠 대본 요약 데이터|가족관련방송, 현대드라마, 역사극, 시사, 교양지식, 예능|897,113|
 |[[AIHub](https://www.aihub.or.kr/)] 일상생활 및 구어체 한-중, 한-일 번역 병렬 말뭉치 데이터	|일상생활, 해외영업, 채팅	|1,313,479|
@@ -40,13 +40,13 @@
 |[[모두의 말뭉치](https://corpus.korean.go.kr/)] 일상 대화 말뭉치 2020	|일상 대화, 협력적 대화	|141,721|
 
 ### • Finetuning Dataset
-|Dataset|Domain|#Sentence|
+|Corpus|Domain|#Sentence|
 |:------|:-----|:--------|
-|[[AIHub](https://www.aihub.or.kr/)] 방송 콘텐츠 한-중, 한-일 번역 병렬 말뭉치 데이터	|TV 방송, 라디오 방송	|1,350,000|
-|[[AIHub](https://www.aihub.or.kr/)] 일상생활 및 구어체 한-영 번역 병렬 말뭉치 데이터	|일상생활, 해외영업, 해외고객과의 채팅	|1,350,000|
-|[[모두의 말뭉치](https://corpus.korean.go.kr/)] 개체명 분석 말뭉치 2021	|공적 독백, 공적 대화, 준구어-대본	|552,293|
+|[[¹AIHub](https://www.aihub.or.kr/)] 방송 콘텐츠 한-중, 한-일 번역 병렬 말뭉치 데이터	|TV 방송, 라디오 방송	|1,350,000|
+|[[²AIHub](https://www.aihub.or.kr/)] 일상생활 및 구어체 한-영 번역 병렬 말뭉치 데이터	|일상생활, 해외영업, 해외고객과의 채팅	|1,350,000|
+|[[³모두의 말뭉치](https://corpus.korean.go.kr/)] 개체명 분석 말뭉치 2021	|공적 독백, 공적 대화, 준구어-대본	|552,293|
 
-**NER 태깅이 된 문장만 활용함*
+**NER 태깅이 된 문장만 활용함; ¹C+²C: 116,190* ³C: 221,902 ¹C+²C+³C: 230,244*
 
 #### - Dataset A (Finetuning Dataset)
 >AIHub데이터셋은 PER, ORG, WORK_OF_ART, PRODUCT 4가지의 태그로 태깅이 되어 있고,<br>
