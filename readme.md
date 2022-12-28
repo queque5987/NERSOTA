@@ -246,3 +246,4 @@ $ python inference.py -m BERT -c ./trained/bert_base_t_kcbert_15/nlpbook/checkpo
 - [모두의 말뭉치](https://corpus.korean.go.kr/)<br>
 - [트위그팜](https://www.twigfarm.net/)<br>
 - [Label Studio](https://labelstud.io/)
+- [NERSOTA-SLNER-ELECTRA](https://github.com/eunxxx/NERSOTA-SLNER-ELECTRA)
