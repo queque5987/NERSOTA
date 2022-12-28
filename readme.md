@@ -108,7 +108,7 @@
 |NERSOTA-BERT       |**0.76**    |-|**0.78**  |0.82      |
 |NERSOTA-RoBERTa-t  |*0.38*      |-|*0.24*    |*0.33*    |
 |NERSOTA-RoBERTa-u  |*0.40*      |-|*0.29*    |-         |
-|NERSOTA-Electra    |-           |-|-         |**0.92**  |
+|[NERSOTA-Electra](https://github.com/eunxxx/NERSOTA-SLNER-ELECTRA)    |-           |-|-         |**0.92**  |
 >Pretrain Dataset을 사용하여 BERT-base, RoBERTa-base의 학습을 진행하여 PLM을 구축하였다.<br><br>
 >[KcBERT](https://github.com/Beomi/KcBERT)는 기존 LM을 그대로 사용하여 baseline으로 사용하였다..<br>
 >NERSOTA-BERT에는 [KcBERT](https://github.com/Beomi/KcBERT) Tokenizer를 사용하였고,<br>
