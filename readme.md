@@ -142,6 +142,8 @@
 
 
 ## How to use
+### • ETL
+*TODO*
 ### • Pretrain
 #### NERSOTA-BERT
 ```Python
