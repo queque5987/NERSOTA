@@ -179,6 +179,7 @@ python pretrain_roberta.py ##-t False --model_name NERSOTA_RoBERTa_u --epochs 20
                            ##--eval_steps 50000 --save_steps 300000 --max_length 64
 ```
 ### • Finetuning
+**Dataset B를 사용하여 학습을 진행합니다.*
 #### NERSOTA-BERT
 ```Python
 python finetuning_bert.py -c ./NERSOTA_BERT ##--model_name NERSOTA_BERT --tokenizer "beomi/kcbert-base" --epochs 3 --batch_size 32
