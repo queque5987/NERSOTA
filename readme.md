@@ -144,7 +144,24 @@
 ## How to use
 **##은 기본 설정 값을 나타냄*
 ### • ETL
-*TODO*
+```Python
+python ETL.py -d {DATASET_DIRECTORY} -m {MODE} -f {FORMAT_OF_DATASET}
+```
+>ETL.py는 각 Dataset에 대하여 변환을 수행합니다.<br>
+>- ***DATASET_DIRECTORY*** 데이터셋 존재하는 폴더 위치<br>
+>- ***MODE***<br>
+**'NER'** --> 폴더 내의 Dataset을 Finetuning Dataset으로 변환합니다.<br>
+*ex)최예나는 24살이고, 대한민국의 가수야␞<최예나:PER>는 <24살:QTT>이고, <대한민국:LOC>의 <가수:CVL>야*<br>
+*-f가 정의되어야 합니다.*<br><br>
+**'P'** --> 폴더 내의 Dataset을 Pretrain Dataset으로 변환합니다.<br>
+*ex)최예나는 24살이고, 대한민국의 가수야*<br>
+*-f가 정의되어야 합니다.*<br><br>
+**'labelstudio'** --> 폴더 내의 Dataset을 Labelstudio에 업로드 하기 위한 Format으로 변환합니다.<br>
+*모델의 output 파일만 지원합니다.*<br><br>
+**'concat'** --> 폴더 내의 Datasets을 합치고 8:1:1 비율로 Train, val, test로 나눕니다.<br>
+*labelstudio format은 지원하지 않습니다.*<br><br>
+>- ***FORMAT_OR_DATASET*** 데이터셋의 형식입니다. AIHub, 모두의 말뭉치, Labelstudio의 JSON-MIN 형식을 지원합니다.<br>
+
 ### • Pretrain
 #### NERSOTA-BERT
 ```Python
